@@ -35,6 +35,11 @@ export function AdminLoginPage() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
   const [isInIframe, setIsInIframe] = useState(false);
+  const [serverHealth, setServerHealth] = useState<{
+    dbConfigured?: boolean;
+    dbConnected?: boolean;
+    dbError?: string | null;
+  } | null>(null);
 
   useEffect(() => {
     try {
@@ -43,6 +48,25 @@ export function AdminLoginPage() {
       setIsInIframe(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (authErrorCode !== 'http_500' && authErrorCode !== 'http_503') {
+      setServerHealth(null);
+      return;
+    }
+    let active = true;
+    fetch('/api/health')
+      .then((r) => r.json())
+      .then((d) => {
+        if (active && d && typeof d === 'object') {
+          setServerHealth(d);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [authErrorCode]);
 
   useEffect(() => {
     if (!loading && admin) {
@@ -147,6 +171,15 @@ export function AdminLoginPage() {
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
               <span className="leading-relaxed">{displayError}</span>
             </div>
+            {serverHealth && (
+              <div className="pt-2 border-t border-red-200/80 text-[11px] font-mono-tabular text-red-900 space-y-0.5">
+                <div>
+                  DB Configured: <strong>{String(Boolean(serverHealth.dbConfigured))}</strong> | DB Connected:{' '}
+                  <strong>{String(Boolean(serverHealth.dbConnected))}</strong>
+                </div>
+                {serverHealth.dbError && <div>Detail: {serverHealth.dbError}</div>}
+              </div>
+            )}
             {firebaseUser && !admin && (
               <div className="pt-2 border-t border-red-200/80 flex items-center justify-between gap-2 text-[11px]">
                 <span className="truncate text-red-800">

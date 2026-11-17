@@ -5,7 +5,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/index.js": {
-      "includeFiles": "{firebase-applet-config.json,api/_app.mjs}"
+      "includeFiles": "{firebase-applet-config.json,api/_app.cjs}"
     }
   },
   "rewrites": [

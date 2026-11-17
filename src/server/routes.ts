@@ -636,8 +636,15 @@ export function registerRoutes(app: express.Express) {
   // ADMIN AUTH & REAL-TIME ANALYTICS
   // ==========================================
   app.get('/api/admin/me', requireAdmin, async (req: AuthRequest, res: Response) => {
-    await ensureInitialData();
-    return res.json({ admin: req.admin });
+    try {
+      await ensureInitialData();
+      return res.json({ admin: req.admin });
+    } catch (err: any) {
+      console.error('Error in /api/admin/me:', err);
+      return res.status(503).json({
+        error: err?.message || 'Gagal menginisialisasi data awal database admin.',
+      });
+    }
   });
 
   app.get('/api/admin/overview', requireAdmin, async (req: AuthRequest, res: Response) => {

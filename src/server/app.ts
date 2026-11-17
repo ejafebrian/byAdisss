@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-import type { Express } from 'express';
+import type { Express, NextFunction, Request, Response } from 'express';
 import { registerRoutes } from './routes.ts';
 
 export function createExpressApp(): Express {
@@ -19,6 +19,20 @@ export function createExpressApp(): Express {
 
   // Register all API and /go/:slug, /l/:slug redirect routes
   registerRoutes(app);
+
+  // Global JSON error middleware so unexpected API errors never emit raw HTML
+  app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    if (res.headersSent) {
+      return next(err);
+    }
+    console.error('Unhandled Express error:', err);
+    if (req.path.startsWith('/api')) {
+      return res.status(err?.status || 500).json({
+        error: err?.message || 'Terjadi kesalahan internal pada server backend.',
+      });
+    }
+    return res.status(err?.status || 500).send('Internal Server Error');
+  });
 
   return app;
 }
