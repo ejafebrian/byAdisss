@@ -54,7 +54,10 @@ export function AdminLoginPage() {
     setLocalError(null);
     setSubmitting(true);
     try {
-      await signInGoogle();
+      const ok = await signInGoogle();
+      if (ok) {
+        navigate('/admin', { replace: true });
+      }
     } catch {
       // authError is captured in context
     } finally {
@@ -81,7 +84,10 @@ export function AdminLoginPage() {
     }
     setSubmitting(true);
     try {
-      await signInEmail(email.trim(), password);
+      const ok = await signInEmail(email.trim(), password);
+      if (ok) {
+        navigate('/admin', { replace: true });
+      }
     } catch {
       // authError captured in context
     } finally {

@@ -1,5 +1,53 @@
 {
   "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user document storing explicit admin flag and role in Firestore.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified user email address",
+          "maxLength": 254
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "admin", "editor", "user"],
+          "description": "User authorization role"
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Explicit boolean admin flag checked by application and rules"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether the account is active"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "displayName", "role", "isAdmin", "isActive", "createdAt", "updatedAt"]
+    },
     "AdminRecord": {
       "title": "AdminRecord",
       "description": "Authorized Firebase admin record mirrored for Firestore security rule verification.",
@@ -23,6 +71,10 @@
           "enum": ["super_admin", "admin", "editor"],
           "description": "Admin authorization role"
         },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Explicit boolean admin flag"
+        },
         "isActive": {
           "type": "boolean",
           "description": "Whether the admin account is active"
@@ -36,10 +88,14 @@
           "format": "date-time"
         }
       },
-      "required": ["uid", "email", "role", "isActive", "createdAt", "updatedAt"]
+      "required": ["uid", "email", "role", "isAdmin", "isActive", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Authenticated user profile documents with explicit role and isAdmin flag."
+    },
     "/admins/{adminUid}": {
       "schema": { "$ref": "#/entities/AdminRecord" },
       "description": "Firestore RBAC registry keyed by Firebase UID for admin authorization checks."

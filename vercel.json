@@ -4,8 +4,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/index.ts": {
-      "includeFiles": "{firebase-applet-config.json,src/**}"
+    "api/index.js": {
+      "includeFiles": "{firebase-applet-config.json,api/_app.mjs}"
     }
   },
   "rewrites": [
