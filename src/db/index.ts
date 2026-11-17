@@ -6,6 +6,10 @@ declare global {
   var _postgresPool: Pool | undefined;
 }
 
+export const isDatabaseConfigured = Boolean(
+  process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.SQL_HOST
+);
+
 export const createPool = () => {
   if (!global._postgresPool) {
     const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;

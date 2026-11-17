@@ -15,6 +15,7 @@ import { useRouter } from '../../lib/router';
 
 export function AdminLoginPage() {
   const {
+    firebaseUser,
     admin,
     loading,
     authError,
@@ -23,6 +24,7 @@ export function AdminLoginPage() {
     signInGoogleRedirect,
     signInEmail,
     resetPassword,
+    logout,
   } = useAuth();
   const { navigate } = useRouter();
   const [mode, setMode] = useState<'login' | 'reset'>('login');
@@ -133,10 +135,26 @@ export function AdminLoginPage() {
         {displayError && (
           <div
             role="alert"
-            className="mt-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-[#FFF5F5] p-3.5 text-xs text-red-900"
+            className="mt-5 space-y-2 rounded-xl border border-red-200 bg-[#FFF5F5] p-3.5 text-xs text-red-900"
           >
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-            <span className="leading-relaxed">{displayError}</span>
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+              <span className="leading-relaxed">{displayError}</span>
+            </div>
+            {firebaseUser && !admin && (
+              <div className="pt-2 border-t border-red-200/80 flex items-center justify-between gap-2 text-[11px]">
+                <span className="truncate text-red-800">
+                  Login Firebase saat ini: <strong>{firebaseUser.email}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="shrink-0 font-semibold text-[#C25B7C] hover:text-[#A84867] underline underline-offset-2"
+                >
+                  Ganti Akun
+                </button>
+              </div>
+            )}
           </div>
         )}
 

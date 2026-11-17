@@ -14,7 +14,7 @@ import {
   or,
   sql,
 } from 'drizzle-orm';
-import { db } from '../db/index.ts';
+import { db, isDatabaseConfigured } from '../db/index.ts';
 import {
   adminAuditLogs,
   admins,
@@ -183,6 +183,30 @@ function renderBrandedErrorHtml(statusCode: number, title: string, message: stri
 }
 
 export function registerRoutes(app: express.Express) {
+  // ==========================================
+  // HEALTH CHECK
+  // ==========================================
+  app.get('/api/health', async (_req: Request, res: Response) => {
+    let dbConnected = false;
+    let dbError: string | null = null;
+    if (isDatabaseConfigured) {
+      try {
+        await db.execute(sql`SELECT 1`);
+        dbConnected = true;
+      } catch (err: any) {
+        dbError = err?.code || err?.message || 'Database connection failed';
+      }
+    } else {
+      dbError = 'DATABASE_URL / SQL_HOST not configured';
+    }
+    return res.status(dbConnected ? 200 : 503).json({
+      ok: dbConnected,
+      dbConfigured: isDatabaseConfigured,
+      dbConnected,
+      dbError,
+    });
+  });
+
   // ==========================================
   // PUBLIC ASSETS SERVING
   // ==========================================

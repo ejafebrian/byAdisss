@@ -90,13 +90,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch('/api/admin/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      const rawText = await res.text();
+      let body: Record<string, any> = {};
+      try {
+        body = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        body = {};
+      }
+
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
         setAdmin(null);
         setAuthErrorCode(`http_${res.status}`);
-        setAuthError(body.error || 'Akun tidak memiliki izin admin.');
+        if (body.error) {
+          setAuthError(String(body.error));
+        } else if (res.status === 404) {
+          setAuthError(
+            'Endpoint API /api/admin/me tidak ditemukan (HTTP 404). Jika menggunakan Vercel, pastikan konfigurasi vercel.json dan api/index.ts sudah terdeploy ulang.'
+          );
+        } else if (res.status >= 500) {
+          setAuthError(
+            `Server backend mengalami error (HTTP ${res.status}) saat memverifikasi admin. Periksa konfigurasi database (DATABASE_URL / SQL_HOST) pada environment server.`
+          );
+        } else {
+          setAuthError(
+            `Akun (${user.email || 'tanpa email'}) tidak memiliki izin admin (HTTP ${res.status}).`
+          );
+        }
       } else {
-        const body = await res.json();
         setAdmin(body.admin);
         setAuthError(null);
         setAuthErrorCode(null);
@@ -104,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setAdmin(null);
       setAuthErrorCode('network_error');
-      setAuthError('Gagal memverifikasi sesi admin dengan server.');
+      setAuthError('Gagal terhubung ke server untuk memverifikasi sesi admin.');
     } finally {
       setLoading(false);
     }
