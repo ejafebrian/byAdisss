@@ -281,7 +281,7 @@ export function AdminLoginPage() {
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="ejafebriansyah3@gmail.com"
+                        placeholder="username"
                         className="w-full min-h-[42px] pl-10 pr-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm text-[#3F232C] focus:outline-none focus:border-[#C25B7C]"
                       />
                     </div>
@@ -352,7 +352,7 @@ export function AdminLoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ejafebriansyah3@gmail.com"
+                placeholder="username"
                 className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm text-[#3F232C] focus:outline-none focus:border-[#C25B7C]"
               />
             </div>
