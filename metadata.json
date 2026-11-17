@@ -1,0 +1,6 @@
+{
+  "name": "by Resty — Shopee Affiliate Catalog",
+  "description": "Personal Shopee Affiliate product curation & link-in-bio catalog by Resty Adisti (@restyfinds). GOOD FINDS, HAPPY BUYS!",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
