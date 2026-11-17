@@ -216,10 +216,6 @@ export function AdminLoginPage() {
               <ArrowRight className="w-4 h-4" />
             </button>
 
-            <div className="rounded-xl bg-[#FFF6F8] border border-[#F0C6D2]/80 px-3.5 py-2.5 text-[11px] text-[#7D4E5D] leading-relaxed">
-              Akun Google pemilik utama (<span className="font-semibold text-[#3F232C]">ejafebriansyah3@gmail.com</span>) otomatis mendapatkan akses Super Admin saat login pertama kali.
-            </div>
-
             {showPopupRecovery && (
               <div className="rounded-xl bg-[#FDE8EE]/60 border border-[#F0C6D2] p-3.5 space-y-2.5 text-xs">
                 <div className="flex items-start gap-2 text-[#3F232C]">
