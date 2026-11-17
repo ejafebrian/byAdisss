@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import type { Response } from 'express';
 import { and, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import {

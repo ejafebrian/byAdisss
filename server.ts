@@ -3,28 +3,14 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { registerRoutes } from './src/server/routes.ts';
+import { createExpressApp } from './src/server/app.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
-  const app = express();
+  const app = createExpressApp();
   const PORT = Number(process.env.PORT) || 3000;
-
-  app.set('trust proxy', 1);
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: true }));
-
-  // Security headers
-  app.use((_req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    next();
-  });
-
-  // Register all API and /go/:slug, /l/:slug redirect routes
-  registerRoutes(app);
 
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
