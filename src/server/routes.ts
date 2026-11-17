@@ -188,11 +188,17 @@ export function registerRoutes(app: express.Express) {
   // ==========================================
   app.get('/api/health', async (_req: Request, res: Response) => {
     let dbConnected = false;
+    let schemaReady = false;
     let dbError: string | null = null;
     if (isDatabaseConfigured) {
       try {
         await db.execute(sql`SELECT 1`);
         dbConnected = true;
+        const tableCheck = await db.execute(
+          sql`SELECT count(*)::int AS cnt FROM information_schema.tables WHERE table_schema = current_schema() AND table_name IN ('admins', 'profiles', 'products')`
+        );
+        const cnt = Number((tableCheck.rows?.[0] as any)?.cnt ?? 0);
+        schemaReady = cnt === 3;
       } catch (err: any) {
         dbError = err?.code || err?.message || 'Database connection failed';
       }
@@ -203,6 +209,7 @@ export function registerRoutes(app: express.Express) {
       ok: dbConnected,
       dbConfigured: isDatabaseConfigured,
       dbConnected,
+      schemaReady,
       dbError,
     });
   });

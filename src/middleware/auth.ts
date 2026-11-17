@@ -4,6 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import { adminAuth } from '../lib/firebase-admin.ts';
 import { db, isDatabaseConfigured } from '../db/index.ts';
 import { admins } from '../db/schema.ts';
+import { ensureDatabaseSchema } from '../server/seedService.ts';
 
 export interface AdminRecord {
   id: number;
@@ -63,6 +64,8 @@ export const requireAdmin = async (
   }
 
   try {
+    await ensureDatabaseSchema();
+
     // Look up admin by uid or case-insensitive email
     let found = await db
       .select()
@@ -134,8 +137,7 @@ export const requireAdmin = async (
   } catch (dbError: any) {
     console.error('Database error during admin verification:', dbError);
     return res.status(503).json({
-      error:
-        'Database gagal diakses saat memverifikasi admin. Pastikan koneksi PostgreSQL (SQL_HOST / DATABASE_URL) aktif dan dapat dijangkau server.',
+      error: `Database gagal diakses saat memverifikasi admin (${dbError?.code || 'DB_ERR'}): ${dbError?.message || 'Periksa koneksi PostgreSQL.'}`,
     });
   }
 };
