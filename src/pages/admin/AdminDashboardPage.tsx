@@ -98,7 +98,7 @@ const PRESETS = [
 ];
 
 export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsView?: boolean }) {
-  const { authFetch, getToken } = useAuth();
+  const { admin, authFetch, getToken } = useAuth();
   const [preset, setPreset] = useState<string>('7d');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -127,12 +127,14 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
   }, [authFetch, preset, customStart, customEnd]);
 
   useEffect(() => {
+    if (!admin) return;
     if (preset === 'custom' && (!customStart || !customEnd)) return;
     loadData();
-  }, [loadData, preset, customStart, customEnd]);
+  }, [admin, loadData, preset, customStart, customEnd]);
 
   // Real-time SSE stream subscription via fetch ReadableStream with Bearer header
   useEffect(() => {
+    if (!admin) return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -192,7 +194,7 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
       controller.abort();
       if (timer) clearTimeout(timer);
     };
-  }, [getToken, loadData]);
+  }, [admin, getToken, loadData]);
 
   const handleExport = async (type: string) => {
     const params = new URLSearchParams({ preset });

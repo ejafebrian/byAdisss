@@ -23,82 +23,83 @@ import { AdminSandboxPage } from './pages/admin/AdminSandboxPage';
 
 function AppRoutes() {
   const { pathname } = useRouter();
+  const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
 
   // Track page views and 30s heartbeat on public pages only
   useEffect(() => {
-    if (pathname.startsWith('/admin')) return;
-    trackPublicPageView(pathname);
+    if (normalizedPath.startsWith('/admin')) return;
+    trackPublicPageView(normalizedPath);
 
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
-        sendPublicHeartbeat(pathname);
+        sendPublicHeartbeat(normalizedPath);
       }
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [pathname]);
+  }, [normalizedPath]);
 
   // Public Routes
-  if (pathname === '/') {
+  if (normalizedPath === '/') {
     return <PublicHomePage />;
   }
-  if (pathname === '/links') {
+  if (normalizedPath === '/links') {
     return <PublicLinksPage />;
   }
-  const categoryMatch = pathname.match(/^\/category\/([^/]+)$/);
+  const categoryMatch = normalizedPath.match(/^\/category\/([^/]+)$/);
   if (categoryMatch) {
     return <PublicHomePage categorySlug={decodeURIComponent(categoryMatch[1])} />;
   }
-  const productMatch = pathname.match(/^\/product\/([^/]+)$/);
+  const productMatch = normalizedPath.match(/^\/product\/([^/]+)$/);
   if (productMatch) {
     return <PublicProductDetailPage slug={decodeURIComponent(productMatch[1])} />;
   }
 
   // Admin Routes
-  if (pathname === '/admin/login') {
+  if (normalizedPath === '/admin/login') {
     return <AdminLoginPage />;
   }
-  if (pathname === '/admin') {
+  if (normalizedPath === '/admin') {
     return <AdminDashboardPage />;
   }
-  if (pathname === '/admin/analytics') {
+  if (normalizedPath === '/admin/analytics') {
     return <AdminDashboardPage isAnalyticsView />;
   }
-  if (pathname === '/admin/products') {
+  if (normalizedPath === '/admin/products') {
     return <AdminProductsPage />;
   }
-  if (pathname === '/admin/products/add') {
+  if (normalizedPath === '/admin/products/add') {
     return <AdminProductFormPage />;
   }
-  const editMatch = pathname.match(/^\/admin\/products\/(\d+)\/edit$/);
+  const editMatch = normalizedPath.match(/^\/admin\/products\/(\d+)\/edit$/);
   if (editMatch) {
     return <AdminProductFormPage productId={Number(editMatch[1])} />;
   }
-  if (pathname === '/admin/products/import') {
+  if (normalizedPath === '/admin/products/import') {
     return <AdminImportPage />;
   }
-  if (pathname === '/admin/sandbox') {
+  if (normalizedPath === '/admin/sandbox') {
     return <AdminSandboxPage />;
   }
-  if (pathname === '/admin/categories') {
+  if (normalizedPath === '/admin/categories') {
     return <AdminCategoriesPage />;
   }
-  if (pathname === '/admin/links') {
+  if (normalizedPath === '/admin/links') {
     return <AdminLinksPage />;
   }
-  if (pathname === '/admin/banners') {
+  if (normalizedPath === '/admin/banners') {
     return <AdminBannersPage />;
   }
-  if (pathname === '/admin/import-history') {
+  if (normalizedPath === '/admin/import-history') {
     return <AdminImportHistoryPage />;
   }
-  if (pathname === '/admin/settings') {
+  if (normalizedPath === '/admin/settings') {
     return <AdminSettingsPage />;
   }
-  if (pathname === '/admin/profile') {
+  if (normalizedPath === '/admin/profile') {
     return <AdminProfilePage />;
   }
-  if (pathname === '/admin/account') {
+  if (normalizedPath === '/admin/account') {
     return <AdminAccountsPage />;
   }
 
