@@ -21,6 +21,7 @@ import { AdminLayout } from './AdminLayout';
 
 interface AdminProductRow {
   id: number;
+  productNumber: number | null;
   productName: string;
   productSlug: string;
   imageUrl: string;
@@ -51,7 +52,7 @@ export function AdminProductsPage() {
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [status, setStatus] = useState('all');
-  const [sort, setSort] = useState('sortOrder');
+  const [sort, setSort] = useState('productNumber');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -64,6 +65,12 @@ export function AdminProductsPage() {
   const [editingLinkProduct, setEditingLinkProduct] = useState<AdminProductRow | null>(null);
   const [editingLinkUrl, setEditingLinkUrl] = useState('');
   const [savingLink, setSavingLink] = useState(false);
+
+  // Inline Edit Product Number modal state
+  const [editingNumberProduct, setEditingNumberProduct] = useState<AdminProductRow | null>(null);
+  const [editingNumberMode, setEditingNumberMode] = useState<'manual' | 'auto'>('manual');
+  const [editingNumberValue, setEditingNumberValue] = useState('');
+  const [savingNumber, setSavingNumber] = useState(false);
 
   useEffect(() => {
     authFetch('/api/admin/categories')
@@ -149,6 +156,7 @@ export function AdminProductsPage() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        productNumber: item.productNumber,
         productName: item.productName,
         productSlug: item.productSlug,
         imageUrl: item.imageUrl,
@@ -175,6 +183,7 @@ export function AdminProductsPage() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        productNumber: item.productNumber,
         productName: item.productName,
         productSlug: item.productSlug,
         imageUrl: item.imageUrl,
@@ -216,6 +225,43 @@ export function AdminProductsPage() {
       notifyError(err?.message || 'Gagal menyimpan link');
     } finally {
       setSavingLink(false);
+    }
+  };
+
+  const handleSaveQuickNumber = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingNumberProduct) return;
+    if (editingNumberMode === 'manual') {
+      const n = Number(editingNumberValue.trim());
+      if (!editingNumberValue.trim() || !Number.isInteger(n) || n < 1) {
+        notifyError('Masukkan nomor produk berupa angka bulat >= 1.');
+        return;
+      }
+    }
+    setSavingNumber(true);
+    try {
+      const res = await authFetch(
+        `/api/admin/products/${editingNumberProduct.id}/product-number`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: editingNumberMode,
+            productNumber: editingNumberMode === 'manual' ? Number(editingNumberValue.trim()) : null,
+          }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Gagal memperbarui nomor produk');
+      notifySuccess(
+        `Nomor produk "${editingNumberProduct.productName}" diperbarui menjadi #${json.product?.productNumber ?? '—'}.`
+      );
+      setEditingNumberProduct(null);
+      loadProducts();
+    } catch (err: any) {
+      notifyError(err?.message || 'Gagal menyimpan nomor produk');
+    } finally {
+      setSavingNumber(false);
     }
   };
 
@@ -337,7 +383,7 @@ export function AdminProductsPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Cari nama, slug, atau label..."
+              placeholder="Cari no. produk, nama, slug, atau label..."
               className="w-full min-h-[42px] pl-9 pr-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs text-[#3F232C] focus:outline-none focus:border-[#C25B7C]"
             />
           </div>
@@ -377,6 +423,7 @@ export function AdminProductsPage() {
             onChange={(e) => setSort(e.target.value)}
             className="min-h-[42px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs text-[#3F232C]"
           >
+            <option value="productNumber">Nomor Produk (1 → N)</option>
             <option value="sortOrder">Urutan Tampil</option>
             <option value="newest">Terbaru</option>
             <option value="clicks">Klik Terbanyak</option>
@@ -496,11 +543,34 @@ export function AdminProductsPage() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-[#3F232C] line-clamp-2">
-                        {item.productName}
-                      </h3>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingNumberProduct(item);
+                              setEditingNumberMode(item.productNumber ? 'manual' : 'auto');
+                              setEditingNumberValue(
+                                item.productNumber !== null && item.productNumber !== undefined
+                                  ? String(item.productNumber)
+                                  : ''
+                              );
+                            }}
+                            title="Ubah Nomor Produk"
+                            className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#FDE8EE] border border-[#F0C6D2] text-[11px] font-mono-tabular font-semibold text-[#C25B7C] hover:bg-[#C25B7C] hover:text-white transition-colors"
+                          >
+                            {item.productNumber ? `#${item.productNumber}` : 'No. —'}
+                          </button>
+                          <span className="text-[11px] font-mono-tabular text-[#7D4E5D] truncate">
+                            /go/{item.productSlug}
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-semibold text-[#3F232C] line-clamp-2">
+                          {item.productName}
+                        </h3>
+                      </div>
                       <button
                         type="button"
                         onClick={() => handleToggleFeatured(item)}
@@ -511,9 +581,6 @@ export function AdminProductsPage() {
                       >
                         <Star className={`w-4 h-4 ${item.isFeatured ? 'fill-amber-500' : ''}`} />
                       </button>
-                    </div>
-                    <div className="mt-0.5 text-[11px] font-mono-tabular text-[#C25B7C] truncate">
-                      /go/{item.productSlug}
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                       <span className="font-semibold text-[#3F232C] tabular-nums">
@@ -664,6 +731,7 @@ export function AdminProductsPage() {
                       className="accent-[#C25B7C]"
                     />
                   </th>
+                  <th className="p-3 text-left w-16">No.</th>
                   <th className="p-3 text-left">Produk</th>
                   <th className="p-3 text-left">Kategori</th>
                   <th className="p-3 text-right">Harga</th>
@@ -681,7 +749,7 @@ export function AdminProductsPage() {
               <tbody className="divide-y divide-[#F0C6D2]/60">
                 {loading && (
                   <tr>
-                    <td colSpan={13} className="p-8 text-center text-[#7D4E5D]">
+                    <td colSpan={14} className="p-8 text-center text-[#7D4E5D]">
                       Memuat katalog produk...
                     </td>
                   </tr>
@@ -689,7 +757,7 @@ export function AdminProductsPage() {
 
                 {!loading && items.length === 0 && (
                   <tr>
-                    <td colSpan={13} className="p-10 text-center text-[#7D4E5D]">
+                    <td colSpan={14} className="p-10 text-center text-[#7D4E5D]">
                       <p className="font-medium text-[#3F232C]">Belum ada produk ditemukan.</p>
                       <div className="mt-3 flex justify-center gap-2">
                         <Link
@@ -720,6 +788,24 @@ export function AdminProductsPage() {
                           aria-label={`Pilih ${item.productName}`}
                           className="accent-[#C25B7C]"
                         />
+                      </td>
+                      <td className="p-3 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingNumberProduct(item);
+                            setEditingNumberMode(item.productNumber ? 'manual' : 'auto');
+                            setEditingNumberValue(
+                              item.productNumber !== null && item.productNumber !== undefined
+                                ? String(item.productNumber)
+                                : ''
+                            );
+                          }}
+                          title="Klik untuk ubah nomor produk"
+                          className="inline-flex items-center px-2 py-1 rounded-lg bg-[#FFF6F8] border border-[#F0C6D2] font-mono-tabular font-semibold text-[#C25B7C] hover:bg-[#C25B7C] hover:text-white transition-colors"
+                        >
+                          {item.productNumber ? `#${item.productNumber}` : '—'}
+                        </button>
                       </td>
                       <td className="p-3">
                         <div className="flex items-center gap-3 min-w-[200px]">
@@ -939,6 +1025,95 @@ export function AdminProductsPage() {
                     {savingLink ? 'Menyimpan...' : 'Simpan Link'}
                   </button>
                 </div>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Inline Edit Product Number Modal */}
+        {editingNumberProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#3F232C]/40 p-4">
+            <form
+              onSubmit={handleSaveQuickNumber}
+              className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-5 sm:p-6 space-y-4 shadow-xl"
+            >
+              <div>
+                <h3 className="font-serif-display text-lg font-semibold text-[#3F232C]">
+                  Ubah Nomor Produk / Urut
+                </h3>
+                <p className="text-xs text-[#7D4E5D] mt-0.5 break-words">
+                  {editingNumberProduct.productName}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#FFF6F8] border border-[#F0C6D2]">
+                <button
+                  type="button"
+                  onClick={() => setEditingNumberMode('manual')}
+                  className={`min-h-[38px] rounded-lg text-xs font-medium transition-colors ${
+                    editingNumberMode === 'manual'
+                      ? 'bg-[#C25B7C] text-white'
+                      : 'text-[#7D4E5D] hover:text-[#3F232C]'
+                  }`}
+                >
+                  Input Manual
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingNumberMode('auto')}
+                  className={`min-h-[38px] rounded-lg text-xs font-medium transition-colors ${
+                    editingNumberMode === 'auto'
+                      ? 'bg-[#C25B7C] text-white'
+                      : 'text-[#7D4E5D] hover:text-[#3F232C]'
+                  }`}
+                >
+                  Otomatis (Berikutnya)
+                </button>
+              </div>
+
+              {editingNumberMode === 'manual' ? (
+                <div>
+                  <label className="block text-xs font-medium text-[#3F232C] mb-1.5">
+                    Nomor Produk *
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono-tabular text-sm font-semibold text-[#C25B7C]">
+                      #
+                    </span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="999999"
+                      step="1"
+                      required
+                      value={editingNumberValue}
+                      onChange={(e) => setEditingNumberValue(e.target.value)}
+                      placeholder="1"
+                      className="w-full min-h-[44px] pl-8 pr-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm font-mono-tabular font-semibold text-[#3F232C] focus:outline-none focus:border-[#C25B7C]"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] p-3.5 text-xs text-[#7D4E5D]">
+                  Server akan otomatis memberikan nomor urut tertinggi berikutnya saat disimpan.
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingNumberProduct(null)}
+                  className="min-h-[40px] px-4 py-2 rounded-xl border border-[#F0C6D2] text-xs font-medium text-[#3F232C]"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingNumber}
+                  className="min-h-[40px] px-4 py-2 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
+                >
+                  {savingNumber ? 'Menyimpan...' : 'Simpan Nomor'}
+                </button>
               </div>
             </form>
           </div>

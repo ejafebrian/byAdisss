@@ -167,7 +167,7 @@ export function PublicHomePage({ categorySlug }: { categorySlug?: string }) {
                 type="search"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Cari rekomendasi produk..."
+                placeholder="Cari nama atau nomor produk (mis. 1, 2)..."
                 aria-label="Cari rekomendasi produk"
                 className="w-full min-h-[44px] pl-10 pr-10 rounded-xl bg-[#FFF6F8] border border-[#F0C6D2] text-sm text-[#3F232C] placeholder:text-[#7D4E5D]/65 focus:outline-none focus:ring-2 focus:ring-[#C25B7C]/25 focus:border-[#C25B7C]"
               />
@@ -213,9 +213,16 @@ export function PublicHomePage({ categorySlug }: { categorySlug?: string }) {
                       />
                     </Link>
                     <div className="p-3 flex-1 flex flex-col">
-                      {(item.label || item.categoryName) && (
-                        <div className="text-[10px] font-medium tracking-wide text-[#C25B7C] truncate">
-                          {[item.label, item.categoryName].filter(Boolean).join(' · ')}
+                      {(item.productNumber || item.label || item.categoryName) && (
+                        <div className="flex items-center gap-1.5 text-[10px] font-medium tracking-wide text-[#C25B7C] truncate">
+                          {item.productNumber ? (
+                            <span className="px-1.5 py-0.5 rounded bg-[#FFF6F8] border border-[#F0C6D2] font-mono-tabular font-semibold text-[#C25B7C] shrink-0">
+                              #{item.productNumber}
+                            </span>
+                          ) : null}
+                          <span className="truncate">
+                            {[item.label, item.categoryName].filter(Boolean).join(' · ')}
+                          </span>
                         </div>
                       )}
                       <Link
@@ -336,9 +343,16 @@ export function PublicHomePage({ categorySlug }: { categorySlug?: string }) {
 
                     <div className="min-w-0 flex-1 flex flex-col justify-between">
                       <div>
-                        {(item.label || item.categoryName) && (
-                          <div className="text-[11px] font-medium text-[#C25B7C] truncate">
-                            {[item.label, item.categoryName].filter(Boolean).join(' · ')}
+                        {(item.productNumber || item.label || item.categoryName) && (
+                          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#C25B7C] truncate">
+                            {item.productNumber ? (
+                              <span className="px-1.5 py-0.5 rounded-md bg-[#FFF6F8] border border-[#F0C6D2] font-mono-tabular font-semibold text-[#C25B7C] shrink-0">
+                                #{item.productNumber}
+                              </span>
+                            ) : null}
+                            <span className="truncate">
+                              {[item.label, item.categoryName].filter(Boolean).join(' · ')}
+                            </span>
                           </div>
                         )}
                         <Link

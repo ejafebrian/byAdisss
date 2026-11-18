@@ -49,6 +49,7 @@ async function runCreateTables(): Promise<void> {
   const missing = REQUIRED_TABLES.filter((tableName) => !existing.has(tableName));
 
   if (missing.length === 0) {
+    await ensureProductNumberColumn();
     return;
   }
 
@@ -98,6 +99,7 @@ async function runCreateTables(): Promise<void> {
 
     CREATE TABLE IF NOT EXISTS "products" (
       "id" serial PRIMARY KEY,
+      "product_number" integer,
       "product_name" text NOT NULL,
       "product_slug" text NOT NULL UNIQUE,
       "description" text DEFAULT '',
@@ -114,6 +116,7 @@ async function runCreateTables(): Promise<void> {
       "updated_at" timestamp with time zone DEFAULT now() NOT NULL
     );
     CREATE UNIQUE INDEX IF NOT EXISTS "products_slug_idx" ON "products" ("product_slug");
+    CREATE INDEX IF NOT EXISTS "products_number_idx" ON "products" ("product_number");
     CREATE INDEX IF NOT EXISTS "products_category_idx" ON "products" ("category_id");
     CREATE INDEX IF NOT EXISTS "products_active_featured_idx" ON "products" ("is_active", "is_archived", "is_featured");
     CREATE INDEX IF NOT EXISTS "products_sort_idx" ON "products" ("sort_order");
@@ -265,6 +268,42 @@ async function runCreateTables(): Promise<void> {
       "created_at" timestamp with time zone DEFAULT now() NOT NULL
     );
   `);
+  await ensureProductNumberColumn();
+}
+
+async function ensureProductNumberColumn(): Promise<void> {
+  const colRes = await pool.query<{ column_name: string }>(
+    `SELECT column_name
+     FROM information_schema.columns
+     WHERE table_schema = current_schema()
+       AND table_name = 'products'
+       AND column_name = 'product_number'`
+  );
+
+  if (colRes.rows.length === 0) {
+    return;
+  }
+
+  const nullCheck = await pool.query<{ cnt: number }>(
+    `SELECT count(*)::int AS cnt FROM "products" WHERE "product_number" IS NULL`
+  );
+  const nullCount = Number(nullCheck.rows[0]?.cnt ?? 0);
+  if (nullCount > 0) {
+    await pool.query(`
+      WITH base AS (
+        SELECT COALESCE(MAX("product_number"), 0) AS max_num FROM "products"
+      ),
+      numbered AS (
+        SELECT id, ROW_NUMBER() OVER (ORDER BY sort_order ASC, id ASC) AS seq
+        FROM "products"
+        WHERE "product_number" IS NULL
+      )
+      UPDATE "products" p
+      SET "product_number" = base.max_num + n.seq
+      FROM numbered n, base
+      WHERE p.id = n.id AND p."product_number" IS NULL;
+    `);
+  }
 }
 
 export async function ensureInitialData(): Promise<void> {
@@ -412,6 +451,7 @@ async function runSeed(): Promise<void> {
     if (productCount === 0) {
       await db.insert(products).values([
         {
+          productNumber: 1,
           productName: 'Rosehip Radiance Glow Serum 30ml',
           productSlug: 'rosehip-radiance-serum',
           description:
@@ -427,6 +467,7 @@ async function runSeed(): Promise<void> {
           sortOrder: 1,
         },
         {
+          productNumber: 2,
           productName: 'Cream Baguette Shoulder Bag Gold Buckle',
           productSlug: 'cream-baguette-shoulder-bag',
           description:
@@ -442,6 +483,7 @@ async function runSeed(): Promise<void> {
           sortOrder: 2,
         },
         {
+          productNumber: 3,
           productName: 'Fluted Ceramic Brush Holder & Travertine Tray',
           productSlug: 'fluted-ceramic-vanity-organizer',
           description:

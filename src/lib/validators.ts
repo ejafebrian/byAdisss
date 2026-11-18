@@ -101,6 +101,18 @@ export function toCsvString(headers: string[], rows: unknown[][]): string {
 }
 
 export const productSchema = z.object({
+  productNumber: z
+    .union([z.number(), z.string(), z.null(), z.undefined()])
+    .optional()
+    .transform((val) => {
+      if (val === null || val === undefined || String(val).trim() === '') return null;
+      const n = Number(String(val).trim());
+      return Number.isInteger(n) ? n : NaN;
+    })
+    .refine((val) => val === null || (!Number.isNaN(val) && val >= 1 && val <= 999999), {
+      message: 'Nomor produk harus berupa angka bulat positif (1 - 999999)',
+    }),
+  numberMode: z.enum(['auto', 'manual']).optional(),
   productName: z.string().trim().min(1, 'Nama produk wajib diisi').max(200),
   productSlug: z.string().trim().max(120).optional(),
   description: z.string().trim().max(2000).optional().default(''),

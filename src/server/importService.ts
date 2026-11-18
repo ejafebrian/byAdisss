@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../db/index.ts';
 import {
   affiliateImportErrors,
@@ -20,6 +20,7 @@ export type DuplicateMode = 'skip' | 'update' | 'new_only';
 
 export interface ParsedImportRow {
   rowNumber: number;
+  productNumber: number | null;
   productName: string;
   productSlug: string;
   categoryName: string;
@@ -80,6 +81,7 @@ export function buildTemplateWorkbookBuffer(): Buffer {
 
   const templateData = [
     [
+      'product_number',
       'product_name',
       'product_slug',
       'category',
@@ -93,6 +95,7 @@ export function buildTemplateWorkbookBuffer(): Buffer {
       'sort_order',
     ],
     [
+      1,
       'Lip Tint Velvet Matte Warm Rose',
       'lip-tint-velvet-matte-rose',
       'Beauty & Skincare',
@@ -106,6 +109,7 @@ export function buildTemplateWorkbookBuffer(): Buffer {
       1,
     ],
     [
+      '',
       'Cardigan Rajut Crop Cream Aesthetic',
       '',
       'Fashion & Style',
@@ -122,6 +126,7 @@ export function buildTemplateWorkbookBuffer(): Buffer {
 
   const guideData = [
     ['Kolom', 'Wajib', 'Keterangan & Format'],
+    ['product_number', 'Tidak', 'Nomor urut/produk manual (angka >= 1). Kosongkan untuk nomor otomatis berikutnya'],
     ['product_name', 'Ya', 'Nama produk maksimal 200 karakter'],
     ['product_slug', 'Tidak', 'Slug unik huruf kecil & strip. Jika kosong, dibuat otomatis dari nama produk'],
     ['category', 'Tidak', 'Nama kategori yang tersedia di menu Categories (mis. Beauty & Skincare)'],
@@ -281,6 +286,7 @@ export async function parseAndValidateSpreadsheet(
 
   const parsedDrafts = dataRows.map((row, i) => {
     const rowNumber = i + 2; // 1-indexed spreadsheet row with header at 1
+    const rawProductNumber = getCell(row, 'product_number');
     const productName = getCell(row, 'product_name');
     const rawSlug = getCell(row, 'product_slug');
     const productSlug = toSlug(rawSlug || productName);
@@ -296,6 +302,7 @@ export async function parseAndValidateSpreadsheet(
 
     return {
       rowNumber,
+      rawProductNumber,
       productName,
       rawSlug,
       productSlug,
@@ -405,6 +412,17 @@ export async function parseAndValidateSpreadsheet(
       }
     }
 
+    let productNumber: number | null = null;
+    if (draft.rawProductNumber !== '') {
+      const cleanedNo = draft.rawProductNumber.replace(/^#/, '').trim();
+      const num = Number(cleanedNo);
+      if (!Number.isInteger(num) || num < 1 || num > 999999) {
+        errors.push(`product_number "${draft.rawProductNumber}" tidak valid (harus angka bulat >= 1)`);
+      } else {
+        productNumber = num;
+      }
+    }
+
     let sortOrder = 0;
     if (draft.rawSortOrder !== '') {
       const n = Number(draft.rawSortOrder);
@@ -428,6 +446,7 @@ export async function parseAndValidateSpreadsheet(
 
     return {
       rowNumber: draft.rowNumber,
+      productNumber,
       productName: draft.productName,
       productSlug: draft.productSlug,
       categoryName: draft.categoryName,
@@ -493,6 +512,11 @@ export async function executeBatchImport(params: {
     rowData: unknown;
   }[] = [];
 
+  const [{ maxNo }] = await db
+    .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
+    .from(products);
+  let nextAutoNumber = (maxNo || 0) + 1;
+
   const BATCH_SIZE = 50;
 
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
@@ -544,29 +568,44 @@ export async function executeBatchImport(params: {
 
           if (existing.length > 0) {
             if (duplicateMode === 'update') {
+              const updateSet: Record<string, unknown> = {
+                productName: row.productName,
+                description: row.description,
+                imageUrl: row.imageUrl,
+                price: row.price !== null ? String(row.price) : null,
+                categoryId: row.categoryId,
+                affiliateUrl: row.affiliateUrl,
+                label: row.label,
+                isFeatured: row.isFeatured,
+                isActive: row.isActive,
+                isArchived: false,
+                sortOrder: row.sortOrder,
+                updatedAt: new Date(),
+              };
+              if (row.productNumber !== null && row.productNumber !== undefined) {
+                updateSet.productNumber = row.productNumber;
+                if (row.productNumber >= nextAutoNumber) {
+                  nextAutoNumber = row.productNumber + 1;
+                }
+              }
               await tx
                 .update(products)
-                .set({
-                  productName: row.productName,
-                  description: row.description,
-                  imageUrl: row.imageUrl,
-                  price: row.price !== null ? String(row.price) : null,
-                  categoryId: row.categoryId,
-                  affiliateUrl: row.affiliateUrl,
-                  label: row.label,
-                  isFeatured: row.isFeatured,
-                  isActive: row.isActive,
-                  isArchived: false,
-                  sortOrder: row.sortOrder,
-                  updatedAt: new Date(),
-                })
+                .set(updateSet)
                 .where(eq(products.id, existing[0].id));
               updatedRows++;
             } else {
               skippedRows++;
             }
           } else {
+            const assignedNumber =
+              row.productNumber !== null && row.productNumber !== undefined
+                ? row.productNumber
+                : nextAutoNumber++;
+            if (assignedNumber >= nextAutoNumber) {
+              nextAutoNumber = assignedNumber + 1;
+            }
             await tx.insert(products).values({
+              productNumber: assignedNumber,
               productName: row.productName,
               productSlug: row.productSlug,
               description: row.description,

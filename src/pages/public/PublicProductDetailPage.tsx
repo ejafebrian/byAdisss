@@ -97,9 +97,14 @@ export function PublicProductDetailPage({ slug }: { slug: string }) {
           </div>
 
           <div>
-            {(product.label || product.categoryName) && (
-              <div className="text-xs font-medium text-[#C25B7C]">
-                {[product.label, product.categoryName].filter(Boolean).join(' · ')}
+            {(product.productNumber || product.label || product.categoryName) && (
+              <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[#C25B7C]">
+                {product.productNumber ? (
+                  <span className="px-2 py-0.5 rounded-md bg-[#FFF6F8] border border-[#F0C6D2] font-mono-tabular font-semibold text-[#C25B7C]">
+                    #{product.productNumber}
+                  </span>
+                ) : null}
+                <span>{[product.label, product.categoryName].filter(Boolean).join(' · ')}</span>
               </div>
             )}
             <h2 className="mt-1 font-serif-display text-2xl font-semibold text-[#3F232C] text-balance">
@@ -155,6 +160,7 @@ export function PublicProductDetailPage({ slug }: { slug: string }) {
                     </div>
                     <div className="p-2.5">
                       <div className="text-xs font-semibold text-[#3F232C] line-clamp-1">
+                        {rel.productNumber ? `#${rel.productNumber} · ` : ''}
                         {rel.productName}
                       </div>
                       {formatIdr(rel.price) && (

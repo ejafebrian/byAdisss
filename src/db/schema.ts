@@ -71,6 +71,7 @@ export const products = pgTable(
   'products',
   {
     id: serial('id').primaryKey(),
+    productNumber: integer('product_number'),
     productName: text('product_name').notNull(),
     productSlug: text('product_slug').notNull().unique(),
     description: text('description').default(''),
@@ -88,6 +89,7 @@ export const products = pgTable(
   },
   (table) => [
     uniqueIndex('products_slug_idx').on(table.productSlug),
+    index('products_number_idx').on(table.productNumber),
     index('products_category_idx').on(table.categoryId),
     index('products_active_featured_idx').on(table.isActive, table.isArchived, table.isFeatured),
     index('products_sort_idx').on(table.sortOrder),

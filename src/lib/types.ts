@@ -38,6 +38,7 @@ export interface PublicCategory {
 
 export interface PublicProduct {
   id: number;
+  productNumber?: number | null;
   productName: string;
   productSlug: string;
   description: string;

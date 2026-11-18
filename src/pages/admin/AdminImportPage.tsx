@@ -18,6 +18,7 @@ import { AdminLayout } from './AdminLayout';
 
 interface PreviewRow {
   rowNumber: number;
+  productNumber?: number | null;
   productName: string;
   productSlug: string;
   categoryName: string;
@@ -58,7 +59,7 @@ interface ImportResultResponse {
 }
 
 const HEADER_COLUMNS =
-  'product_name\tproduct_slug\tcategory\tdescription\tprice\timage_url\taffiliate_url\tlabel\tfeatured\tstatus\tsort_order';
+  'product_number\tproduct_name\tproduct_slug\tcategory\tdescription\tprice\timage_url\taffiliate_url\tlabel\tfeatured\tstatus\tsort_order';
 
 export function AdminImportPage() {
   const { authFetch } = useAuth();
@@ -316,7 +317,7 @@ export function AdminImportPage() {
                     Pastikan akses Google Sheet diset ke <strong>Anyone with the link (Viewer / Lihat saja)</strong>, lalu tempel URL spreadsheet di atas. Anda bisa menyalin header kolom standar berikut ke baris 1 Google Sheet Anda:
                   </p>
                   <div className="p-2.5 rounded-lg bg-[#FFFFFF] border border-[#F0C6D2]/70 font-mono-tabular text-[11px] text-[#3F232C] overflow-x-auto whitespace-nowrap">
-                    product_name | product_slug | category | description | price | image_url | affiliate_url | label | featured | status | sort_order
+                    product_number | product_name | product_slug | category | description | price | image_url | affiliate_url | label | featured | status | sort_order
                   </div>
                 </div>
               </form>
@@ -471,8 +472,13 @@ export function AdminImportPage() {
                       </span>
                     )}
                   </div>
-                  <div className="font-semibold text-[#3F232C]">
-                    {r.productName || <span className="text-red-700 italic">(Kosong)</span>}
+                  <div className="font-semibold text-[#3F232C] flex items-center gap-1.5">
+                    <span className="px-1.5 py-0.5 rounded bg-[#FFF6F8] border border-[#F0C6D2] font-mono-tabular text-[10px] text-[#C25B7C]">
+                      {r.productNumber ? `#${r.productNumber}` : 'Auto'}
+                    </span>
+                    <span className="truncate">
+                      {r.productName || <span className="text-red-700 italic">(Kosong)</span>}
+                    </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#7D4E5D]">
                     <span className="font-mono-tabular text-[#C25B7C]">{r.productSlug || '—'}</span>
@@ -500,6 +506,7 @@ export function AdminImportPage() {
                   <thead className="bg-[#FFF6F8] border-b border-[#F0C6D2] text-[#7D4E5D] sticky top-0">
                     <tr>
                       <th className="p-3 text-left">Baris</th>
+                      <th className="p-3 text-left">No. Produk</th>
                       <th className="p-3 text-left">Validasi</th>
                       <th className="p-3 text-left">Nama Produk</th>
                       <th className="p-3 text-left">Slug</th>
@@ -512,6 +519,9 @@ export function AdminImportPage() {
                     {preview.rows.map((r) => (
                       <tr key={r.rowNumber} className="hover:bg-[#FFF6F8]/70">
                         <td className="p-3 font-mono-tabular">{r.rowNumber}</td>
+                        <td className="p-3 font-mono-tabular text-[#C25B7C] font-semibold">
+                          {r.productNumber ? `#${r.productNumber}` : 'Auto'}
+                        </td>
                         <td className="p-3 whitespace-nowrap">
                           {r.validationStatus === 'valid' && (
                             <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">

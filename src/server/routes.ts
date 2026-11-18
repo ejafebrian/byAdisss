@@ -430,13 +430,19 @@ export function registerRoutes(app: express.Express) {
 
       const productConditions = [eq(products.isActive, true), eq(products.isArchived, false)];
       if (search) {
-        productConditions.push(
-          or(
-            ilike(products.productName, `%${search}%`),
-            ilike(products.description, `%${search}%`),
-            ilike(products.label, `%${search}%`)
-          )!
-        );
+        const cleanNumStr = search.replace(/^#/, '').trim();
+        const searchFilters = [
+          ilike(products.productName, `%${search}%`),
+          ilike(products.description, `%${search}%`),
+          ilike(products.label, `%${search}%`),
+        ];
+        if (/^\d+$/.test(cleanNumStr)) {
+          const parsedSearchNum = Number(cleanNumStr);
+          if (Number.isInteger(parsedSearchNum) && parsedSearchNum > 0) {
+            searchFilters.push(eq(products.productNumber, parsedSearchNum));
+          }
+        }
+        productConditions.push(or(...searchFilters)!);
       }
 
       const [
@@ -483,6 +489,7 @@ export function registerRoutes(app: express.Express) {
         db
           .select({
             id: products.id,
+            productNumber: products.productNumber,
             productName: products.productName,
             productSlug: products.productSlug,
             description: products.description,
@@ -498,11 +505,16 @@ export function registerRoutes(app: express.Express) {
           .from(products)
           .leftJoin(categories, eq(products.categoryId, categories.id))
           .where(and(...productConditions))
-          .orderBy(asc(products.sortOrder), desc(products.createdAt)),
+          .orderBy(
+            asc(sql`COALESCE(${products.productNumber}, 999999)`),
+            asc(products.sortOrder),
+            desc(products.createdAt)
+          ),
         categorySlug || search
           ? db
               .select({
                 id: products.id,
+                productNumber: products.productNumber,
                 productName: products.productName,
                 productSlug: products.productSlug,
                 description: products.description,
@@ -524,7 +536,11 @@ export function registerRoutes(app: express.Express) {
                   eq(products.isFeatured, true)
                 )
               )
-              .orderBy(asc(products.sortOrder), desc(products.createdAt))
+              .orderBy(
+                asc(sql`COALESCE(${products.productNumber}, 999999)`),
+                asc(products.sortOrder),
+                desc(products.createdAt)
+              )
               .limit(8)
           : Promise.resolve(null),
       ]);
@@ -584,6 +600,7 @@ export function registerRoutes(app: express.Express) {
       const rows = await db
         .select({
           id: products.id,
+          productNumber: products.productNumber,
           productName: products.productName,
           productSlug: products.productSlug,
           description: products.description,
@@ -615,6 +632,7 @@ export function registerRoutes(app: express.Express) {
         db
           .select({
             id: products.id,
+            productNumber: products.productNumber,
             productName: products.productName,
             productSlug: products.productSlug,
             imageUrl: products.imageUrl,
@@ -770,17 +788,20 @@ export function registerRoutes(app: express.Express) {
       const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
       const categoryId = Number(req.query.categoryId) || 0;
       const status = typeof req.query.status === 'string' ? req.query.status : 'all';
-      const sort = typeof req.query.sort === 'string' ? req.query.sort : 'sortOrder';
+      const sort = typeof req.query.sort === 'string' ? req.query.sort : 'productNumber';
 
       const conditions = [];
       if (search) {
-        conditions.push(
-          or(
-            ilike(products.productName, `%${search}%`),
-            ilike(products.productSlug, `%${search}%`),
-            ilike(products.label, `%${search}%`)
-          )!
-        );
+        const cleanNumStr = search.replace(/^#/, '').trim();
+        const searchFilters = [
+          ilike(products.productName, `%${search}%`),
+          ilike(products.productSlug, `%${search}%`),
+          ilike(products.label, `%${search}%`),
+        ];
+        if (/^\d+$/.test(cleanNumStr)) {
+          searchFilters.push(sql`CAST(${products.productNumber} AS TEXT) ILIKE ${'%' + cleanNumStr + '%'}`);
+        }
+        conditions.push(or(...searchFilters)!);
       }
       if (categoryId > 0) {
         conditions.push(eq(products.categoryId, categoryId));
@@ -809,6 +830,7 @@ export function registerRoutes(app: express.Express) {
       const productRows = await db
         .select({
           id: products.id,
+          productNumber: products.productNumber,
           productName: products.productName,
           productSlug: products.productSlug,
           description: products.description,
@@ -845,7 +867,10 @@ export function registerRoutes(app: express.Express) {
                 ? asc(products.price)
                 : sort === 'price_desc'
                   ? desc(products.price)
-                  : asc(products.sortOrder),
+                  : sort === 'sortOrder'
+                    ? asc(products.sortOrder)
+                    : asc(sql`COALESCE(${products.productNumber}, 999999)`),
+          asc(products.sortOrder),
           desc(products.id)
         )
         .limit(limit)
@@ -892,6 +917,27 @@ export function registerRoutes(app: express.Express) {
     }
   });
 
+  app.get('/api/admin/products/next-number', requireAdmin, async (_req: AuthRequest, res: Response) => {
+    try {
+      await ensureInitialData();
+      const [stats] = await db
+        .select({
+          maxNumber: sql<number>`coalesce(max(${products.productNumber}), 0)::int`,
+          totalProducts: sql<number>`count(*)::int`,
+        })
+        .from(products);
+      const maxNumber = stats?.maxNumber ?? 0;
+      return res.json({
+        maxNumber,
+        nextNumber: maxNumber + 1,
+        totalProducts: stats?.totalProducts ?? 0,
+      });
+    } catch (err) {
+      console.error('Error getting next product number:', err);
+      return res.status(500).json({ error: 'Gagal menghitung nomor urut berikutnya' });
+    }
+  });
+
   app.get('/api/admin/products/:id', requireAdmin, async (req: AuthRequest, res: Response) => {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) {
@@ -910,6 +956,7 @@ export function registerRoutes(app: express.Express) {
     adminWriteLimiter,
     async (req: AuthRequest, res: Response) => {
       try {
+        await ensureInitialData();
         const parsed = productSchema.safeParse(req.body);
         if (!parsed.success) {
           return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Data produk tidak valid' });
@@ -941,9 +988,26 @@ export function registerRoutes(app: express.Express) {
           });
         }
 
+        if (data.numberMode === 'manual' && (data.productNumber === null || data.productNumber === undefined)) {
+          return res.status(400).json({
+            error: 'Masukkan nomor produk manual atau pilih mode Otomatis.',
+          });
+        }
+
+        let assignedProductNumber: number;
+        if (data.numberMode !== 'auto' && data.productNumber !== null && data.productNumber !== undefined) {
+          assignedProductNumber = data.productNumber;
+        } else {
+          const [maxRow] = await db
+            .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
+            .from(products);
+          assignedProductNumber = (maxRow?.maxNo ?? 0) + 1;
+        }
+
         const [created] = await db
           .insert(products)
           .values({
+            productNumber: assignedProductNumber,
             productName: data.productName,
             productSlug: slug,
             description: data.description,
@@ -964,7 +1028,11 @@ export function registerRoutes(app: express.Express) {
           action: 'CREATE_PRODUCT',
           entityType: 'product',
           entityId: created.id,
-          details: { productName: created.productName, slug: created.productSlug },
+          details: {
+            productNumber: created.productNumber,
+            productName: created.productName,
+            slug: created.productSlug,
+          },
         });
 
         return res.status(201).json({ product: created });
@@ -1013,23 +1081,45 @@ export function registerRoutes(app: express.Express) {
           });
         }
 
+        let resolvedProductNumber: number | null | undefined = undefined;
+        if (data.numberMode === 'auto') {
+          const [maxRow] = await db
+            .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
+            .from(products);
+          resolvedProductNumber = (maxRow?.maxNo ?? 0) + 1;
+        } else if (data.numberMode === 'manual') {
+          if (data.productNumber === null || data.productNumber === undefined) {
+            return res.status(400).json({
+              error: 'Masukkan nomor produk manual atau pilih mode Otomatis.',
+            });
+          }
+          resolvedProductNumber = data.productNumber;
+        } else if (req.body?.productNumber !== undefined) {
+          resolvedProductNumber = data.productNumber ?? null;
+        }
+
+        const updatePayload: Record<string, unknown> = {
+          productName: data.productName,
+          productSlug: slug,
+          description: data.description,
+          imageUrl: data.imageUrl,
+          price: data.price !== null ? String(data.price) : null,
+          categoryId: data.categoryId,
+          affiliateUrl: data.affiliateUrl,
+          label: data.label,
+          isFeatured: data.isFeatured,
+          isActive: data.isActive,
+          isArchived: data.isArchived,
+          sortOrder: data.sortOrder,
+          updatedAt: new Date(),
+        };
+        if (resolvedProductNumber !== undefined) {
+          updatePayload.productNumber = resolvedProductNumber;
+        }
+
         const [updated] = await db
           .update(products)
-          .set({
-            productName: data.productName,
-            productSlug: slug,
-            description: data.description,
-            imageUrl: data.imageUrl,
-            price: data.price !== null ? String(data.price) : null,
-            categoryId: data.categoryId,
-            affiliateUrl: data.affiliateUrl,
-            label: data.label,
-            isFeatured: data.isFeatured,
-            isActive: data.isActive,
-            isArchived: data.isArchived,
-            sortOrder: data.sortOrder,
-            updatedAt: new Date(),
-          })
+          .set(updatePayload)
           .where(eq(products.id, id))
           .returning();
 
@@ -1042,13 +1132,70 @@ export function registerRoutes(app: express.Express) {
           action: 'UPDATE_PRODUCT',
           entityType: 'product',
           entityId: updated.id,
-          details: { productName: updated.productName, slug: updated.productSlug },
+          details: {
+            productNumber: updated.productNumber,
+            productName: updated.productName,
+            slug: updated.productSlug,
+          },
         });
 
         return res.json({ product: updated });
       } catch (err) {
         console.error('Update product error:', err);
         return res.status(500).json({ error: 'Gagal memperbarui produk' });
+      }
+    }
+  );
+
+  app.patch(
+    '/api/admin/products/:id/product-number',
+    requireAdmin,
+    adminWriteLimiter,
+    async (req: AuthRequest, res: Response) => {
+      try {
+        const id = Number(req.params.id);
+        if (!Number.isInteger(id) || id <= 0) {
+          return res.status(400).json({ error: 'ID produk tidak valid' });
+        }
+
+        const mode = req.body?.mode === 'auto' ? 'auto' : 'manual';
+        let nextNum: number;
+
+        if (mode === 'auto') {
+          const [maxRow] = await db
+            .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
+            .from(products);
+          nextNum = (maxRow?.maxNo ?? 0) + 1;
+        } else {
+          const parsedNum = Number(String(req.body?.productNumber ?? '').trim());
+          if (!Number.isInteger(parsedNum) || parsedNum < 1 || parsedNum > 999999) {
+            return res.status(400).json({ error: 'Nomor produk harus berupa angka bulat positif (1 - 999999)' });
+          }
+          nextNum = parsedNum;
+        }
+
+        const [updated] = await db
+          .update(products)
+          .set({ productNumber: nextNum, updatedAt: new Date() })
+          .where(eq(products.id, id))
+          .returning();
+
+        if (!updated) {
+          return res.status(404).json({ error: 'Produk tidak ditemukan' });
+        }
+
+        await logAdminAction({
+          admin: req.admin,
+          action: 'UPDATE_PRODUCT_NUMBER',
+          entityType: 'product',
+          entityId: updated.id,
+          details: { slug: updated.productSlug, productNumber: nextNum, mode },
+        });
+
+        return res.json({ product: updated });
+      } catch (err) {
+        console.error('Patch product number error:', err);
+        return res.status(500).json({ error: 'Gagal memperbarui nomor produk' });
       }
     }
   );
@@ -1179,9 +1326,15 @@ export function registerRoutes(app: express.Express) {
       const suffix = Date.now().toString().slice(-4);
       const newSlug = `${orig.productSlug}-copy-${suffix}`.slice(0, 100);
 
+      const [maxRow] = await db
+        .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
+        .from(products);
+      const nextNo = (maxRow?.maxNo ?? 0) + 1;
+
       const [copy] = await db
         .insert(products)
         .values({
+          productNumber: nextNo,
           productName: `${orig.productName} (Salinan)`,
           productSlug: newSlug,
           description: orig.description,
@@ -1888,6 +2041,7 @@ export function registerRoutes(app: express.Express) {
         const rows = await db
           .select({
             id: products.id,
+            productNumber: products.productNumber,
             productName: products.productName,
             productSlug: products.productSlug,
             category: categories.name,
@@ -1901,11 +2055,12 @@ export function registerRoutes(app: express.Express) {
           })
           .from(products)
           .leftJoin(categories, eq(products.categoryId, categories.id))
-          .orderBy(asc(products.sortOrder), asc(products.id));
+          .orderBy(asc(sql`COALESCE(${products.productNumber}, 999999)`), asc(products.sortOrder), asc(products.id));
 
         csv = toCsvString(
           [
             'ID',
+            'Product Number',
             'Product Name',
             'Product Slug',
             'Category',
@@ -1919,6 +2074,7 @@ export function registerRoutes(app: express.Express) {
           ],
           rows.map((r) => [
             r.id,
+            r.productNumber ?? '',
             r.productName,
             r.productSlug,
             r.category || '',
