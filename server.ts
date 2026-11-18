@@ -3,12 +3,20 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
+import { isDatabaseConfigured } from './src/db/index.ts';
 import { createExpressApp } from './src/server/app.ts';
+import { ensureDatabaseSchema } from './src/server/seedService.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
+  if (isDatabaseConfigured) {
+    ensureDatabaseSchema().catch((err) => {
+      console.error('Startup auto-schema sync warning:', err);
+    });
+  }
+
   const app = createExpressApp();
   const PORT = Number(process.env.PORT) || 3000;
 

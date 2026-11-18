@@ -64,7 +64,8 @@ import {
 } from './importService.ts';
 import type { DuplicateMode, ParsedImportRow } from './importService.ts';
 import { createRateLimiter } from './rateLimit.ts';
-import { ensureInitialData, hasProductNumberColumn } from './seedService.ts';
+import { ensureDatabaseSchema, ensureInitialData, hasProductNumberColumn } from './seedService.ts';
+import { inspectDatabaseSchema, synchronizeDatabase } from './dbSyncService.ts';
 
 const imageUpload = multer({
   storage: multer.memoryStorage(),
@@ -213,10 +214,17 @@ export function registerRoutes(app: express.Express) {
       try {
         await db.execute(sql`SELECT 1`);
         dbConnected = true;
-        const tableCheck = await db.execute(
+        let tableCheck = await db.execute(
           sql`SELECT count(*)::int AS cnt FROM information_schema.tables WHERE table_schema = current_schema() AND table_name IN ('admins', 'profiles', 'products')`
         );
-        const cnt = Number((tableCheck.rows?.[0] as any)?.cnt ?? 0);
+        let cnt = Number((tableCheck.rows?.[0] as any)?.cnt ?? 0);
+        if (cnt < 3) {
+          await ensureDatabaseSchema();
+          tableCheck = await db.execute(
+            sql`SELECT count(*)::int AS cnt FROM information_schema.tables WHERE table_schema = current_schema() AND table_name IN ('admins', 'profiles', 'products')`
+          );
+          cnt = Number((tableCheck.rows?.[0] as any)?.cnt ?? 0);
+        }
         schemaReady = cnt === 3;
       } catch (err: any) {
         dbError = err?.code || err?.message || 'Database connection failed';
@@ -1883,6 +1891,64 @@ export function registerRoutes(app: express.Express) {
       }
       const [deletedRow] = await db.delete(admins).where(eq(admins.id, id)).returning();
       return res.json({ deleted: true, account: deletedRow || null });
+    }
+  );
+
+  // ==========================================
+  // DATABASE SYNCHRONIZATION & AUTO-SCHEMA
+  // ==========================================
+  app.get('/api/admin/database/status', requireAdmin, async (_req: AuthRequest, res: Response) => {
+    try {
+      const inspection = await inspectDatabaseSchema();
+      return res.json(inspection);
+    } catch (err: any) {
+      console.error('Database status inspection error:', err);
+      return res.status(500).json({
+        error: err?.message || 'Gagal memeriksa status skema database.',
+      });
+    }
+  });
+
+  app.post(
+    '/api/admin/database/sync',
+    requireAdmin,
+    adminWriteLimiter,
+    async (req: AuthRequest, res: Response) => {
+      try {
+        const body = req.body || {};
+        const report = await synchronizeDatabase({
+          createMissingSchema: body.createMissingSchema !== false,
+          backfillProductNumbers: body.backfillProductNumbers !== false,
+          syncSequences: body.syncSequences !== false,
+          seedDefaults: body.seedDefaults !== false,
+        });
+
+        invalidatePublicCatalogCache();
+
+        await logAdminAction({
+          admin: req.admin,
+          action: 'DATABASE_SYNC',
+          entityType: 'database',
+          details: {
+            tablesCreated: report.migration.tablesCreated.length,
+            columnsAdded: report.migration.columnsAdded.length,
+            indexesCreated: report.migration.indexesCreated.length,
+            productNumbersBackfilled: report.migration.productNumbersBackfilled,
+            sequencesSynced: report.sequencesSynced.length,
+            durationMs: report.durationMs,
+          },
+        });
+
+        return res.json({
+          sync: report,
+          status: report.inspection,
+        });
+      } catch (err: any) {
+        console.error('Database sync error:', err);
+        return res.status(500).json({
+          error: err?.message || 'Gagal melakukan sinkronisasi skema dan data database.',
+        });
+      }
     }
   );
 

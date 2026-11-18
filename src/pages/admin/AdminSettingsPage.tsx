@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Save } from 'lucide-react';
+import { ArrowRight, Database, Save } from 'lucide-react';
 import { useAuth } from '../../lib/authContext';
+import { Link } from '../../lib/router';
 import { useUiFeedback } from '../../components/Toast';
 import { AdminLayout } from './AdminLayout';
 
@@ -60,63 +61,88 @@ export function AdminSettingsPage() {
           Memuat pengaturan...
         </div>
       ) : (
-        <form onSubmit={handleSave} className="max-w-2xl rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-6 space-y-5">
-          <div>
-            <label className="block text-xs font-medium text-[#3F232C] mb-1">
-              Allowlist Domain Affiliate (dipisahkan koma)
-            </label>
-            <input
-              type="text"
-              value={allowedDomains}
-              onChange={(e) => setAllowedDomains(e.target.value)}
-              className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs font-mono-tabular focus:outline-none focus:border-[#C25B7C]"
-            />
-            <p className="mt-1 text-[11px] text-[#7D4E5D]">
-              Endpoint /go/[slug], Sandbox Link, dan sistem import hanya mengizinkan redirect ke domain pada daftar ini.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="max-w-2xl space-y-6">
+          <form onSubmit={handleSave} className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-6 space-y-5">
             <div>
               <label className="block text-xs font-medium text-[#3F232C] mb-1">
-                Maksimal Baris Import per File / Sheet
+                Allowlist Domain Affiliate (dipisahkan koma)
               </label>
               <input
-                type="number"
-                min="1"
-                max="2000"
-                value={importMaxRows}
-                onChange={(e) => setImportMaxRows(e.target.value)}
-                className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm tabular-nums"
+                type="text"
+                value={allowedDomains}
+                onChange={(e) => setAllowedDomains(e.target.value)}
+                className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs font-mono-tabular focus:outline-none focus:border-[#C25B7C]"
               />
+              <p className="mt-1 text-[11px] text-[#7D4E5D]">
+                Endpoint /go/[slug], Sandbox Link, dan sistem import hanya mengizinkan redirect ke domain pada daftar ini.
+              </p>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-[#3F232C] mb-1">
-                Kebijakan Retensi Data Analitik (Hari)
-              </label>
-              <input
-                type="number"
-                min="30"
-                max="3650"
-                value={retentionDays}
-                onChange={(e) => setRetentionDays(e.target.value)}
-                className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm tabular-nums"
-              />
-            </div>
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-[#3F232C] mb-1">
+                  Maksimal Baris Import per File / Sheet
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="2000"
+                  value={importMaxRows}
+                  onChange={(e) => setImportMaxRows(e.target.value)}
+                  className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm tabular-nums"
+                />
+              </div>
 
-          <div className="flex justify-end pt-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
+              <div>
+                <label className="block text-xs font-medium text-[#3F232C] mb-1">
+                  Kebijakan Retensi Data Analitik (Hari)
+                </label>
+                <input
+                  type="number"
+                  min="30"
+                  max="3650"
+                  value={retentionDays}
+                  onChange={(e) => setRetentionDays(e.target.value)}
+                  className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm tabular-nums"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
+              >
+                <Save className="w-4 h-4" />
+                <span>{saving ? 'Menyimpan...' : 'Simpan Pengaturan'}</span>
+              </button>
+            </div>
+          </form>
+
+          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FDE8EE] text-[#C25B7C] flex items-center justify-center shrink-0">
+                <Database className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="font-serif-display text-base font-semibold text-[#3F232C]">
+                  Sinkronisasi Database & Skema Otomatis
+                </h2>
+                <p className="text-xs text-[#7D4E5D] mt-0.5">
+                  Periksa koneksi PostgreSQL & Firestore, buat tabel/kolom yang kurang secara otomatis, dan sinkronkan sequence database.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/admin/database"
+              className="min-h-[42px] inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#FDE8EE] hover:bg-[#F9D6E0] text-[#3F232C] text-xs font-medium shrink-0"
             >
-              <Save className="w-4 h-4" />
-              <span>{saving ? 'Menyimpan...' : 'Simpan Pengaturan'}</span>
-            </button>
+              <span>Buka Database Sync</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#C25B7C]" />
+            </Link>
           </div>
-        </form>
+        </div>
       )}
     </AdminLayout>
   );

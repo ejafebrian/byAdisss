@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   BarChart3,
+  Database,
   ExternalLink,
   FileSpreadsheet,
   FlaskConical,
@@ -41,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Import History', to: '/admin/import-history', icon: History },
   { label: 'Profile Settings', to: '/admin/profile', icon: UserCircle },
   { label: 'Website Settings', to: '/admin/settings', icon: Settings },
+  { label: 'Database Sync', to: '/admin/database', icon: Database },
   { label: 'Admin Account', to: '/admin/account', icon: Shield },
 ];
 

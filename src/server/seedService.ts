@@ -13,262 +13,22 @@ import { DEFAULT_ALLOWED_AFFILIATE_DOMAINS } from '../lib/validators.ts';
 let schemaPromise: Promise<void> | null = null;
 let seedPromise: Promise<void> | null = null;
 
+export function resetSchemaCaches(): void {
+  cachedHasProductNumberCol = null;
+  schemaPromise = null;
+}
+
 export async function ensureDatabaseSchema(): Promise<void> {
   if (!schemaPromise) {
-    schemaPromise = runCreateTables().catch((err) => {
+    schemaPromise = (async () => {
+      const { runAutoSchemaMigration } = await import('./dbSyncService.ts');
+      await runAutoSchemaMigration();
+    })().catch((err) => {
       schemaPromise = null;
       throw err;
     });
   }
   return schemaPromise;
-}
-
-const REQUIRED_TABLES = [
-  'profiles',
-  'admins',
-  'categories',
-  'products',
-  'links',
-  'banners',
-  'visitors',
-  'sessions',
-  'page_views',
-  'click_events',
-  'affiliate_import_jobs',
-  'affiliate_import_errors',
-  'settings',
-  'admin_audit_logs',
-  'uploaded_assets',
-];
-
-async function runCreateTables(): Promise<void> {
-  const existingRes = await pool.query<{ table_name: string }>(
-    `SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema()`
-  );
-  const existing = new Set(existingRes.rows.map((r) => r.table_name));
-  const missing = REQUIRED_TABLES.filter((tableName) => !existing.has(tableName));
-
-  if (missing.length === 0) {
-    await ensureProductNumberColumn();
-    return;
-  }
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS "profiles" (
-      "id" serial PRIMARY KEY,
-      "brand_name" text DEFAULT 'by Adisss' NOT NULL,
-      "username" text DEFAULT '@adisssfinds' NOT NULL,
-      "tagline" text DEFAULT 'GOOD FINDS, HAPPY BUYS!' NOT NULL,
-      "description" text DEFAULT 'Hi, I''m Adisss! ♡ Sharing cute finds, daily essentials, and little things worth buying.' NOT NULL,
-      "avatar_url" text DEFAULT '' NOT NULL,
-      "instagram_url" text DEFAULT 'https://instagram.com/adisssfinds' NOT NULL,
-      "tiktok_url" text DEFAULT 'https://tiktok.com/@adisssfinds' NOT NULL,
-      "whatsapp_url" text DEFAULT '' NOT NULL,
-      "footer_text" text DEFAULT 'Made with ♡ by Adisss' NOT NULL,
-      "affiliate_disclosure" text DEFAULT '' NOT NULL,
-      "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS "admins" (
-      "id" serial PRIMARY KEY,
-      "uid" text UNIQUE,
-      "email" text NOT NULL UNIQUE,
-      "display_name" text DEFAULT 'Admin' NOT NULL,
-      "role" text DEFAULT 'admin' NOT NULL,
-      "is_active" boolean DEFAULT true NOT NULL,
-      "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-    CREATE UNIQUE INDEX IF NOT EXISTS "admins_email_idx" ON "admins" ("email");
-    CREATE INDEX IF NOT EXISTS "admins_uid_idx" ON "admins" ("uid");
-
-    CREATE TABLE IF NOT EXISTS "categories" (
-      "id" serial PRIMARY KEY,
-      "name" text NOT NULL,
-      "slug" text NOT NULL UNIQUE,
-      "description" text DEFAULT '',
-      "image_url" text DEFAULT '',
-      "icon" text DEFAULT 'Sparkles',
-      "sort_order" integer DEFAULT 0 NOT NULL,
-      "is_active" boolean DEFAULT true NOT NULL,
-      "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-    CREATE UNIQUE INDEX IF NOT EXISTS "categories_slug_idx" ON "categories" ("slug");
-    CREATE INDEX IF NOT EXISTS "categories_active_sort_idx" ON "categories" ("is_active", "sort_order");
-
-    CREATE TABLE IF NOT EXISTS "products" (
-      "id" serial PRIMARY KEY,
-      "product_number" integer,
-      "product_name" text NOT NULL,
-      "product_slug" text NOT NULL UNIQUE,
-      "description" text DEFAULT '',
-      "image_url" text DEFAULT '',
-      "price" numeric(14, 2),
-      "category_id" integer REFERENCES "categories"("id") ON DELETE SET NULL,
-      "affiliate_url" text NOT NULL,
-      "label" text DEFAULT '',
-      "is_featured" boolean DEFAULT false NOT NULL,
-      "is_active" boolean DEFAULT true NOT NULL,
-      "is_archived" boolean DEFAULT false NOT NULL,
-      "sort_order" integer DEFAULT 0 NOT NULL,
-      "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-    CREATE UNIQUE INDEX IF NOT EXISTS "products_slug_idx" ON "products" ("product_slug");
-    CREATE INDEX IF NOT EXISTS "products_number_idx" ON "products" ("product_number");
-    CREATE INDEX IF NOT EXISTS "products_category_idx" ON "products" ("category_id");
-    CREATE INDEX IF NOT EXISTS "products_active_featured_idx" ON "products" ("is_active", "is_archived", "is_featured");
-    CREATE INDEX IF NOT EXISTS "products_sort_idx" ON "products" ("sort_order");
-
-    CREATE TABLE IF NOT EXISTS "links" (
-      "id" serial PRIMARY KEY,
-      "title" text NOT NULL,
-      "slug" text NOT NULL UNIQUE,
-      "url" text NOT NULL,
-      "description" text DEFAULT '',
-      "icon" text DEFAULT 'ExternalLink',
-      "sort_order" integer DEFAULT 0 NOT NULL,
-      "is_active" boolean DEFAULT true NOT NULL,
-      "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-    CREATE UNIQUE INDEX IF NOT EXISTS "links_slug_idx" ON "links" ("slug");
-    CREATE INDEX IF NOT EXISTS "links_active_sort_idx" ON "links" ("is_active", "sort_order");
-
-    CREATE TABLE IF NOT EXISTS "banners" (
-      "id" serial PRIMARY KEY,
-      "title" text NOT NULL,
-      "description" text DEFAULT '',
-      "image_url" text DEFAULT '',
-      "target_url" text DEFAULT '',
-      "sort_order" integer DEFAULT 0 NOT NULL,
-      "is_active" boolean DEFAULT true NOT NULL,
-      "starts_at" timestamp with time zone,
-      "ends_at" timestamp with time zone,
-      "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS "banners_active_sort_idx" ON "banners" ("is_active", "sort_order");
-
-    CREATE TABLE IF NOT EXISTS "visitors" (
-      "id" serial PRIMARY KEY,
-      "visitor_key" text NOT NULL UNIQUE,
-      "first_seen_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "last_seen_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-    CREATE UNIQUE INDEX IF NOT EXISTS "visitors_key_idx" ON "visitors" ("visitor_key");
-
-    CREATE TABLE IF NOT EXISTS "sessions" (
-      "id" serial PRIMARY KEY,
-      "visitor_id" integer NOT NULL REFERENCES "visitors"("id") ON DELETE CASCADE,
-      "session_key" text NOT NULL UNIQUE,
-      "started_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "last_seen_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "device_type" text DEFAULT 'desktop',
-      "browser" text DEFAULT 'Other',
-      "operating_system" text DEFAULT 'Other',
-      "referrer" text DEFAULT 'direct',
-      "utm_source" text DEFAULT '',
-      "utm_medium" text DEFAULT '',
-      "utm_campaign" text DEFAULT ''
-    );
-    CREATE UNIQUE INDEX IF NOT EXISTS "sessions_key_idx" ON "sessions" ("session_key");
-    CREATE INDEX IF NOT EXISTS "sessions_last_seen_idx" ON "sessions" ("last_seen_at");
-    CREATE INDEX IF NOT EXISTS "sessions_visitor_idx" ON "sessions" ("visitor_id");
-
-    CREATE TABLE IF NOT EXISTS "page_views" (
-      "id" serial PRIMARY KEY,
-      "visitor_id" integer NOT NULL REFERENCES "visitors"("id") ON DELETE CASCADE,
-      "session_id" integer NOT NULL REFERENCES "sessions"("id") ON DELETE CASCADE,
-      "page_url" text NOT NULL,
-      "viewed_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "referrer" text DEFAULT 'direct',
-      "utm_source" text DEFAULT '',
-      "utm_medium" text DEFAULT '',
-      "utm_campaign" text DEFAULT '',
-      "device_type" text DEFAULT 'desktop'
-    );
-    CREATE INDEX IF NOT EXISTS "page_views_viewed_at_idx" ON "page_views" ("viewed_at");
-    CREATE INDEX IF NOT EXISTS "page_views_visitor_idx" ON "page_views" ("visitor_id");
-    CREATE INDEX IF NOT EXISTS "page_views_page_url_idx" ON "page_views" ("page_url");
-
-    CREATE TABLE IF NOT EXISTS "click_events" (
-      "id" serial PRIMARY KEY,
-      "product_id" integer REFERENCES "products"("id") ON DELETE SET NULL,
-      "link_id" integer REFERENCES "links"("id") ON DELETE SET NULL,
-      "target_type" text DEFAULT 'product' NOT NULL,
-      "visitor_id" integer REFERENCES "visitors"("id") ON DELETE SET NULL,
-      "session_id" integer REFERENCES "sessions"("id") ON DELETE SET NULL,
-      "clicked_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "referrer" text DEFAULT 'direct',
-      "utm_source" text DEFAULT '',
-      "utm_campaign" text DEFAULT '',
-      "device_type" text DEFAULT 'desktop'
-    );
-    CREATE INDEX IF NOT EXISTS "click_events_clicked_at_idx" ON "click_events" ("clicked_at");
-    CREATE INDEX IF NOT EXISTS "click_events_product_idx" ON "click_events" ("product_id");
-    CREATE INDEX IF NOT EXISTS "click_events_link_idx" ON "click_events" ("link_id");
-    CREATE INDEX IF NOT EXISTS "click_events_visitor_idx" ON "click_events" ("visitor_id");
-
-    CREATE TABLE IF NOT EXISTS "affiliate_import_jobs" (
-      "id" serial PRIMARY KEY,
-      "admin_id" integer REFERENCES "admins"("id") ON DELETE SET NULL,
-      "admin_email" text NOT NULL,
-      "filename" text NOT NULL,
-      "total_rows" integer DEFAULT 0 NOT NULL,
-      "success_rows" integer DEFAULT 0 NOT NULL,
-      "updated_rows" integer DEFAULT 0 NOT NULL,
-      "skipped_rows" integer DEFAULT 0 NOT NULL,
-      "failed_rows" integer DEFAULT 0 NOT NULL,
-      "import_status" text DEFAULT 'completed' NOT NULL,
-      "duplicate_mode" text DEFAULT 'skip' NOT NULL,
-      "created_at" timestamp with time zone DEFAULT now() NOT NULL,
-      "completed_at" timestamp with time zone
-    );
-    CREATE INDEX IF NOT EXISTS "import_jobs_created_idx" ON "affiliate_import_jobs" ("created_at");
-
-    CREATE TABLE IF NOT EXISTS "affiliate_import_errors" (
-      "id" serial PRIMARY KEY,
-      "import_job_id" integer NOT NULL REFERENCES "affiliate_import_jobs"("id") ON DELETE CASCADE,
-      "row_number" integer NOT NULL,
-      "error_message" text NOT NULL,
-      "row_data" jsonb,
-      "created_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS "import_errors_job_idx" ON "affiliate_import_errors" ("import_job_id");
-
-    CREATE TABLE IF NOT EXISTS "settings" (
-      "id" serial PRIMARY KEY,
-      "setting_key" text NOT NULL UNIQUE,
-      "setting_value" text NOT NULL,
-      "updated_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS "admin_audit_logs" (
-      "id" serial PRIMARY KEY,
-      "admin_id" integer REFERENCES "admins"("id") ON DELETE SET NULL,
-      "admin_email" text NOT NULL,
-      "action" text NOT NULL,
-      "entity_type" text NOT NULL,
-      "entity_id" text DEFAULT '',
-      "details" jsonb,
-      "created_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-    CREATE INDEX IF NOT EXISTS "audit_logs_created_idx" ON "admin_audit_logs" ("created_at");
-
-    CREATE TABLE IF NOT EXISTS "uploaded_assets" (
-      "id" serial PRIMARY KEY,
-      "filename" text NOT NULL,
-      "mime_type" text NOT NULL,
-      "size_bytes" integer NOT NULL,
-      "data_base64" text NOT NULL,
-      "folder" text DEFAULT 'general' NOT NULL,
-      "uploaded_by_admin_id" integer REFERENCES "admins"("id") ON DELETE SET NULL,
-      "created_at" timestamp with time zone DEFAULT now() NOT NULL
-    );
-  `);
-  await ensureProductNumberColumn();
 }
 
 let cachedHasProductNumberCol: boolean | null = null;
@@ -292,10 +52,10 @@ export async function hasProductNumberColumn(): Promise<boolean> {
   }
 }
 
-async function ensureProductNumberColumn(): Promise<void> {
+export async function backfillMissingProductNumbers(): Promise<number> {
   const exists = await hasProductNumberColumn();
   if (!exists) {
-    return;
+    return 0;
   }
 
   const nullCheck = await pool.query<{ cnt: number }>(
@@ -318,10 +78,14 @@ async function ensureProductNumberColumn(): Promise<void> {
       WHERE p.id = n.id AND p."product_number" IS NULL;
     `);
   }
+  return nullCount;
 }
 
-export async function ensureInitialData(): Promise<void> {
+export async function ensureInitialData(forceRecheck = false): Promise<void> {
   await ensureDatabaseSchema();
+  if (forceRecheck) {
+    seedPromise = null;
+  }
   if (!seedPromise) {
     seedPromise = runSeed().catch((err) => {
       seedPromise = null;

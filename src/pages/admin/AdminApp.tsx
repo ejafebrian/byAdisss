@@ -11,6 +11,7 @@ import { AdminLinksPage } from './AdminLinksPage';
 import { AdminBannersPage } from './AdminBannersPage';
 import { AdminProfilePage } from './AdminProfilePage';
 import { AdminSettingsPage } from './AdminSettingsPage';
+import { AdminDatabasePage } from './AdminDatabasePage';
 import { AdminAccountsPage } from './AdminAccountsPage';
 import { AdminSandboxPage } from './AdminSandboxPage';
 import { NotFoundPage } from '../NotFoundPage';
@@ -56,6 +57,9 @@ export default function AdminApp({ normalizedPath }: { normalizedPath: string })
     }
     if (normalizedPath === '/admin/settings') {
       return <AdminSettingsPage />;
+    }
+    if (normalizedPath === '/admin/database') {
+      return <AdminDatabasePage />;
     }
     if (normalizedPath === '/admin/profile') {
       return <AdminProfilePage />;
