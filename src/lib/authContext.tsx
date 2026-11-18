@@ -434,12 +434,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const authFetch = useCallback(
     async (input: string, init: RequestInit = {}) => {
-      const token = await getToken();
+      let token = await getToken();
+      if (!token && auth.currentUser) {
+        token = await auth.currentUser.getIdToken(true).catch(() => null);
+      }
       const headers = new Headers(init.headers || {});
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
-      return fetch(input, { ...init, headers });
+      const response = await fetch(input, { ...init, headers });
+      if (response.status === 401 && auth.currentUser) {
+        const refreshed = await auth.currentUser.getIdToken(true).catch(() => null);
+        if (refreshed && refreshed !== token) {
+          const retryHeaders = new Headers(init.headers || {});
+          retryHeaders.set('Authorization', `Bearer ${refreshed}`);
+          return fetch(input, { ...init, headers: retryHeaders });
+        }
+      }
+      return response;
     },
     [getToken]
   );

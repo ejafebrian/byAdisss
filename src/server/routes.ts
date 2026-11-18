@@ -64,7 +64,7 @@ import {
 } from './importService.ts';
 import type { DuplicateMode, ParsedImportRow } from './importService.ts';
 import { createRateLimiter } from './rateLimit.ts';
-import { ensureInitialData } from './seedService.ts';
+import { ensureInitialData, hasProductNumberColumn } from './seedService.ts';
 
 const imageUpload = multer({
   storage: multer.memoryStorage(),
@@ -426,6 +426,7 @@ export function registerRoutes(app: express.Express) {
       }
 
       await ensureInitialData();
+      const hasProdNum = await hasProductNumberColumn();
       const now = new Date();
 
       const productConditions = [eq(products.isActive, true), eq(products.isArchived, false)];
@@ -436,7 +437,7 @@ export function registerRoutes(app: express.Express) {
           ilike(products.description, `%${search}%`),
           ilike(products.label, `%${search}%`),
         ];
-        if (/^\d+$/.test(cleanNumStr)) {
+        if (hasProdNum && /^\d+$/.test(cleanNumStr)) {
           const parsedSearchNum = Number(cleanNumStr);
           if (Number.isInteger(parsedSearchNum) && parsedSearchNum > 0) {
             searchFilters.push(eq(products.productNumber, parsedSearchNum));
@@ -489,7 +490,7 @@ export function registerRoutes(app: express.Express) {
         db
           .select({
             id: products.id,
-            productNumber: products.productNumber,
+            productNumber: hasProdNum ? products.productNumber : sql<number | null>`null`,
             productName: products.productName,
             productSlug: products.productSlug,
             description: products.description,
@@ -506,7 +507,7 @@ export function registerRoutes(app: express.Express) {
           .leftJoin(categories, eq(products.categoryId, categories.id))
           .where(and(...productConditions))
           .orderBy(
-            asc(sql`COALESCE(${products.productNumber}, 999999)`),
+            hasProdNum ? asc(sql`COALESCE(${products.productNumber}, 999999)`) : asc(products.sortOrder),
             asc(products.sortOrder),
             desc(products.createdAt)
           ),
@@ -514,7 +515,7 @@ export function registerRoutes(app: express.Express) {
           ? db
               .select({
                 id: products.id,
-                productNumber: products.productNumber,
+                productNumber: hasProdNum ? products.productNumber : sql<number | null>`null`,
                 productName: products.productName,
                 productSlug: products.productSlug,
                 description: products.description,
@@ -537,7 +538,7 @@ export function registerRoutes(app: express.Express) {
                 )
               )
               .orderBy(
-                asc(sql`COALESCE(${products.productNumber}, 999999)`),
+                hasProdNum ? asc(sql`COALESCE(${products.productNumber}, 999999)`) : asc(products.sortOrder),
                 asc(products.sortOrder),
                 desc(products.createdAt)
               )
@@ -597,10 +598,11 @@ export function registerRoutes(app: express.Express) {
       }
 
       await ensureInitialData();
+      const hasProdNum = await hasProductNumberColumn();
       const rows = await db
         .select({
           id: products.id,
-          productNumber: products.productNumber,
+          productNumber: hasProdNum ? products.productNumber : sql<number | null>`null`,
           productName: products.productName,
           productSlug: products.productSlug,
           description: products.description,
@@ -632,7 +634,7 @@ export function registerRoutes(app: express.Express) {
         db
           .select({
             id: products.id,
-            productNumber: products.productNumber,
+            productNumber: hasProdNum ? products.productNumber : sql<number | null>`null`,
             productName: products.productName,
             productSlug: products.productSlug,
             imageUrl: products.imageUrl,
@@ -782,6 +784,7 @@ export function registerRoutes(app: express.Express) {
   app.get('/api/admin/products', requireAdmin, async (req: AuthRequest, res: Response) => {
     try {
       await ensureInitialData();
+      const hasProdNum = await hasProductNumberColumn();
       const page = Math.max(1, Number(req.query.page) || 1);
       const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
       const offset = (page - 1) * limit;
@@ -798,7 +801,7 @@ export function registerRoutes(app: express.Express) {
           ilike(products.productSlug, `%${search}%`),
           ilike(products.label, `%${search}%`),
         ];
-        if (/^\d+$/.test(cleanNumStr)) {
+        if (hasProdNum && /^\d+$/.test(cleanNumStr)) {
           searchFilters.push(sql`CAST(${products.productNumber} AS TEXT) ILIKE ${'%' + cleanNumStr + '%'}`);
         }
         conditions.push(or(...searchFilters)!);
@@ -830,7 +833,7 @@ export function registerRoutes(app: express.Express) {
       const productRows = await db
         .select({
           id: products.id,
-          productNumber: products.productNumber,
+          productNumber: hasProdNum ? products.productNumber : sql<number | null>`null`,
           productName: products.productName,
           productSlug: products.productSlug,
           description: products.description,
@@ -867,7 +870,7 @@ export function registerRoutes(app: express.Express) {
                 ? asc(products.price)
                 : sort === 'price_desc'
                   ? desc(products.price)
-                  : sort === 'sortOrder'
+                  : sort === 'sortOrder' || !hasProdNum
                     ? asc(products.sortOrder)
                     : asc(sql`COALESCE(${products.productNumber}, 999999)`),
           asc(products.sortOrder),
@@ -920,9 +923,12 @@ export function registerRoutes(app: express.Express) {
   app.get('/api/admin/products/next-number', requireAdmin, async (_req: AuthRequest, res: Response) => {
     try {
       await ensureInitialData();
+      const hasProdNum = await hasProductNumberColumn();
       const [stats] = await db
         .select({
-          maxNumber: sql<number>`coalesce(max(${products.productNumber}), 0)::int`,
+          maxNumber: hasProdNum
+            ? sql<number>`coalesce(max(${products.productNumber}), 0)::int`
+            : sql<number>`count(*)::int`,
           totalProducts: sql<number>`count(*)::int`,
         })
         .from(products);
@@ -939,15 +945,43 @@ export function registerRoutes(app: express.Express) {
   });
 
   app.get('/api/admin/products/:id', requireAdmin, async (req: AuthRequest, res: Response) => {
-    const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) {
-      return res.status(400).json({ error: 'ID produk tidak valid' });
+    try {
+      await ensureInitialData();
+      const hasProdNum = await hasProductNumberColumn();
+      const id = Number(req.params.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({ error: 'ID produk tidak valid' });
+      }
+      const rows = await db
+        .select({
+          id: products.id,
+          productNumber: hasProdNum ? products.productNumber : sql<number | null>`null`,
+          productName: products.productName,
+          productSlug: products.productSlug,
+          description: products.description,
+          imageUrl: products.imageUrl,
+          price: products.price,
+          categoryId: products.categoryId,
+          affiliateUrl: products.affiliateUrl,
+          label: products.label,
+          isFeatured: products.isFeatured,
+          isActive: products.isActive,
+          isArchived: products.isArchived,
+          sortOrder: products.sortOrder,
+          createdAt: products.createdAt,
+          updatedAt: products.updatedAt,
+        })
+        .from(products)
+        .where(eq(products.id, id))
+        .limit(1);
+      if (!rows.length) {
+        return res.status(404).json({ error: 'Produk tidak ditemukan' });
+      }
+      return res.json({ product: rows[0] });
+    } catch (err) {
+      console.error('Error getting admin product by id:', err);
+      return res.status(500).json({ error: 'Gagal memuat detail produk' });
     }
-    const rows = await db.select().from(products).where(eq(products.id, id)).limit(1);
-    if (!rows.length) {
-      return res.status(404).json({ error: 'Produk tidak ditemukan' });
-    }
-    return res.json({ product: rows[0] });
   });
 
   app.post(
@@ -957,6 +991,7 @@ export function registerRoutes(app: express.Express) {
     async (req: AuthRequest, res: Response) => {
       try {
         await ensureInitialData();
+        const hasProdNum = await hasProductNumberColumn();
         const parsed = productSchema.safeParse(req.body);
         if (!parsed.success) {
           return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Data produk tidak valid' });
@@ -994,34 +1029,40 @@ export function registerRoutes(app: express.Express) {
           });
         }
 
-        let assignedProductNumber: number;
-        if (data.numberMode !== 'auto' && data.productNumber !== null && data.productNumber !== undefined) {
-          assignedProductNumber = data.productNumber;
-        } else {
-          const [maxRow] = await db
-            .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
-            .from(products);
-          assignedProductNumber = (maxRow?.maxNo ?? 0) + 1;
+        let assignedProductNumber: number | null = null;
+        if (hasProdNum) {
+          if (data.numberMode !== 'auto' && data.productNumber !== null && data.productNumber !== undefined) {
+            assignedProductNumber = data.productNumber;
+          } else {
+            const [maxRow] = await db
+              .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
+              .from(products);
+            assignedProductNumber = (maxRow?.maxNo ?? 0) + 1;
+          }
+        }
+
+        const insertValues: typeof products.$inferInsert = {
+          productName: data.productName,
+          productSlug: slug,
+          description: data.description,
+          imageUrl: data.imageUrl,
+          price: data.price !== null ? String(data.price) : null,
+          categoryId: data.categoryId,
+          affiliateUrl: data.affiliateUrl,
+          label: data.label,
+          isFeatured: data.isFeatured,
+          isActive: data.isActive,
+          isArchived: data.isArchived,
+          sortOrder: data.sortOrder,
+        };
+        if (hasProdNum && assignedProductNumber !== null) {
+          insertValues.productNumber = assignedProductNumber;
         }
 
         const [created] = await db
           .insert(products)
-          .values({
-            productNumber: assignedProductNumber,
-            productName: data.productName,
-            productSlug: slug,
-            description: data.description,
-            imageUrl: data.imageUrl,
-            price: data.price !== null ? String(data.price) : null,
-            categoryId: data.categoryId,
-            affiliateUrl: data.affiliateUrl,
-            label: data.label,
-            isFeatured: data.isFeatured,
-            isActive: data.isActive,
-            isArchived: data.isArchived,
-            sortOrder: data.sortOrder,
-          })
-          .returning();
+          .values(insertValues)
+          .returning({ id: products.id, productName: products.productName, productSlug: products.productSlug });
 
         await logAdminAction({
           admin: req.admin,
@@ -1029,13 +1070,13 @@ export function registerRoutes(app: express.Express) {
           entityType: 'product',
           entityId: created.id,
           details: {
-            productNumber: created.productNumber,
+            productNumber: assignedProductNumber,
             productName: created.productName,
             slug: created.productSlug,
           },
         });
 
-        return res.status(201).json({ product: created });
+        return res.status(201).json({ product: { ...created, productNumber: assignedProductNumber } });
       } catch (err) {
         console.error('Create product error:', err);
         return res.status(500).json({ error: 'Gagal menambahkan produk' });
@@ -1049,6 +1090,7 @@ export function registerRoutes(app: express.Express) {
     adminWriteLimiter,
     async (req: AuthRequest, res: Response) => {
       try {
+        const hasProdNum = await hasProductNumberColumn();
         const id = Number(req.params.id);
         if (!Number.isInteger(id) || id <= 0) {
           return res.status(400).json({ error: 'ID produk tidak valid' });
@@ -1082,20 +1124,22 @@ export function registerRoutes(app: express.Express) {
         }
 
         let resolvedProductNumber: number | null | undefined = undefined;
-        if (data.numberMode === 'auto') {
-          const [maxRow] = await db
-            .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
-            .from(products);
-          resolvedProductNumber = (maxRow?.maxNo ?? 0) + 1;
-        } else if (data.numberMode === 'manual') {
-          if (data.productNumber === null || data.productNumber === undefined) {
-            return res.status(400).json({
-              error: 'Masukkan nomor produk manual atau pilih mode Otomatis.',
-            });
+        if (hasProdNum) {
+          if (data.numberMode === 'auto') {
+            const [maxRow] = await db
+              .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
+              .from(products);
+            resolvedProductNumber = (maxRow?.maxNo ?? 0) + 1;
+          } else if (data.numberMode === 'manual') {
+            if (data.productNumber === null || data.productNumber === undefined) {
+              return res.status(400).json({
+                error: 'Masukkan nomor produk manual atau pilih mode Otomatis.',
+              });
+            }
+            resolvedProductNumber = data.productNumber;
+          } else if (req.body?.productNumber !== undefined) {
+            resolvedProductNumber = data.productNumber ?? null;
           }
-          resolvedProductNumber = data.productNumber;
-        } else if (req.body?.productNumber !== undefined) {
-          resolvedProductNumber = data.productNumber ?? null;
         }
 
         const updatePayload: Record<string, unknown> = {
@@ -1113,7 +1157,7 @@ export function registerRoutes(app: express.Express) {
           sortOrder: data.sortOrder,
           updatedAt: new Date(),
         };
-        if (resolvedProductNumber !== undefined) {
+        if (hasProdNum && resolvedProductNumber !== undefined) {
           updatePayload.productNumber = resolvedProductNumber;
         }
 
@@ -1121,7 +1165,7 @@ export function registerRoutes(app: express.Express) {
           .update(products)
           .set(updatePayload)
           .where(eq(products.id, id))
-          .returning();
+          .returning({ id: products.id, productName: products.productName, productSlug: products.productSlug });
 
         if (!updated) {
           return res.status(404).json({ error: 'Produk tidak ditemukan' });
@@ -1133,7 +1177,7 @@ export function registerRoutes(app: express.Express) {
           entityType: 'product',
           entityId: updated.id,
           details: {
-            productNumber: updated.productNumber,
+            productNumber: resolvedProductNumber ?? null,
             productName: updated.productName,
             slug: updated.productSlug,
           },
@@ -1153,6 +1197,10 @@ export function registerRoutes(app: express.Express) {
     adminWriteLimiter,
     async (req: AuthRequest, res: Response) => {
       try {
+        const hasProdNum = await hasProductNumberColumn();
+        if (!hasProdNum) {
+          return res.status(400).json({ error: 'Kolom nomor produk belum tersedia di skema database saat ini.' });
+        }
         const id = Number(req.params.id);
         if (!Number.isInteger(id) || id <= 0) {
           return res.status(400).json({ error: 'ID produk tidak valid' });
@@ -1178,7 +1226,7 @@ export function registerRoutes(app: express.Express) {
           .update(products)
           .set({ productNumber: nextNum, updatedAt: new Date() })
           .where(eq(products.id, id))
-          .returning();
+          .returning({ id: products.id, productSlug: products.productSlug, productNumber: products.productNumber });
 
         if (!updated) {
           return res.status(404).json({ error: 'Produk tidak ditemukan' });
@@ -1319,38 +1367,61 @@ export function registerRoutes(app: express.Express) {
 
   app.post('/api/admin/products/:id/duplicate', requireAdmin, async (req: AuthRequest, res: Response) => {
     try {
+      const hasProdNum = await hasProductNumberColumn();
       const id = Number(req.params.id);
-      const rows = await db.select().from(products).where(eq(products.id, id)).limit(1);
+      const rows = await db
+        .select({
+          id: products.id,
+          productName: products.productName,
+          productSlug: products.productSlug,
+          description: products.description,
+          imageUrl: products.imageUrl,
+          price: products.price,
+          categoryId: products.categoryId,
+          affiliateUrl: products.affiliateUrl,
+          label: products.label,
+          sortOrder: products.sortOrder,
+        })
+        .from(products)
+        .where(eq(products.id, id))
+        .limit(1);
       if (!rows.length) return res.status(404).json({ error: 'Produk tidak ditemukan' });
       const orig = rows[0];
       const suffix = Date.now().toString().slice(-4);
       const newSlug = `${orig.productSlug}-copy-${suffix}`.slice(0, 100);
 
-      const [maxRow] = await db
-        .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
-        .from(products);
-      const nextNo = (maxRow?.maxNo ?? 0) + 1;
+      let nextNo: number | null = null;
+      if (hasProdNum) {
+        const [maxRow] = await db
+          .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
+          .from(products);
+        nextNo = (maxRow?.maxNo ?? 0) + 1;
+      }
+
+      const insertValues: typeof products.$inferInsert = {
+        productName: `${orig.productName} (Salinan)`,
+        productSlug: newSlug,
+        description: orig.description,
+        imageUrl: orig.imageUrl,
+        price: orig.price,
+        categoryId: orig.categoryId,
+        affiliateUrl: orig.affiliateUrl,
+        label: orig.label,
+        isFeatured: false,
+        isActive: false,
+        isArchived: false,
+        sortOrder: orig.sortOrder + 1,
+      };
+      if (hasProdNum && nextNo !== null) {
+        insertValues.productNumber = nextNo;
+      }
 
       const [copy] = await db
         .insert(products)
-        .values({
-          productNumber: nextNo,
-          productName: `${orig.productName} (Salinan)`,
-          productSlug: newSlug,
-          description: orig.description,
-          imageUrl: orig.imageUrl,
-          price: orig.price,
-          categoryId: orig.categoryId,
-          affiliateUrl: orig.affiliateUrl,
-          label: orig.label,
-          isFeatured: false,
-          isActive: false,
-          isArchived: false,
-          sortOrder: orig.sortOrder + 1,
-        })
-        .returning();
+        .values(insertValues)
+        .returning({ id: products.id, productName: products.productName, productSlug: products.productSlug });
 
-      return res.status(201).json({ product: copy });
+      return res.status(201).json({ product: { ...copy, productNumber: nextNo } });
     } catch (err) {
       console.error('Duplicate product error:', err);
       return res.status(500).json({ error: 'Gagal menduplikasi produk' });
@@ -2038,10 +2109,11 @@ export function registerRoutes(app: express.Express) {
       let filename = `by-adisss-${type}.csv`;
 
       if (type === 'products') {
+        const hasProdNum = await hasProductNumberColumn();
         const rows = await db
           .select({
             id: products.id,
-            productNumber: products.productNumber,
+            productNumber: hasProdNum ? products.productNumber : sql<number | null>`null`,
             productName: products.productName,
             productSlug: products.productSlug,
             category: categories.name,
@@ -2055,7 +2127,11 @@ export function registerRoutes(app: express.Express) {
           })
           .from(products)
           .leftJoin(categories, eq(products.categoryId, categories.id))
-          .orderBy(asc(sql`COALESCE(${products.productNumber}, 999999)`), asc(products.sortOrder), asc(products.id));
+          .orderBy(
+            hasProdNum ? asc(sql`COALESCE(${products.productNumber}, 999999)`) : asc(products.sortOrder),
+            asc(products.sortOrder),
+            asc(products.id)
+          );
 
         csv = toCsvString(
           [

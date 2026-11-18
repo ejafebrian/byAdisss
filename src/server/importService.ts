@@ -14,6 +14,7 @@ import {
   isAllowedImageUrl,
   toSlug,
 } from '../lib/validators.ts';
+import { hasProductNumberColumn } from './seedService.ts';
 
 export type ValidationStatus = 'valid' | 'warning' | 'error';
 export type DuplicateMode = 'skip' | 'update' | 'new_only';
@@ -512,10 +513,14 @@ export async function executeBatchImport(params: {
     rowData: unknown;
   }[] = [];
 
-  const [{ maxNo }] = await db
-    .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
-    .from(products);
-  let nextAutoNumber = (maxNo || 0) + 1;
+  const hasProdNum = await hasProductNumberColumn();
+  let nextAutoNumber = 1;
+  if (hasProdNum) {
+    const [{ maxNo }] = await db
+      .select({ maxNo: sql<number>`coalesce(max(${products.productNumber}), 0)::int` })
+      .from(products);
+    nextAutoNumber = (maxNo || 0) + 1;
+  }
 
   const BATCH_SIZE = 50;
 
@@ -582,7 +587,7 @@ export async function executeBatchImport(params: {
                 sortOrder: row.sortOrder,
                 updatedAt: new Date(),
               };
-              if (row.productNumber !== null && row.productNumber !== undefined) {
+              if (hasProdNum && row.productNumber !== null && row.productNumber !== undefined) {
                 updateSet.productNumber = row.productNumber;
                 if (row.productNumber >= nextAutoNumber) {
                   nextAutoNumber = row.productNumber + 1;
@@ -604,8 +609,7 @@ export async function executeBatchImport(params: {
             if (assignedNumber >= nextAutoNumber) {
               nextAutoNumber = assignedNumber + 1;
             }
-            await tx.insert(products).values({
-              productNumber: assignedNumber,
+            const insertValues: typeof products.$inferInsert = {
               productName: row.productName,
               productSlug: row.productSlug,
               description: row.description,
@@ -618,7 +622,11 @@ export async function executeBatchImport(params: {
               isActive: row.isActive,
               isArchived: false,
               sortOrder: row.sortOrder,
-            });
+            };
+            if (hasProdNum) {
+              insertValues.productNumber = assignedNumber;
+            }
+            await tx.insert(products).values(insertValues);
             successRows++;
           }
         });

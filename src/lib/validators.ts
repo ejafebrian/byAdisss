@@ -119,6 +119,7 @@ export const productSchema = z.object({
   imageUrl: z.string().trim().max(1000).optional().default(''),
   price: z
     .union([z.number(), z.string(), z.null(), z.undefined()])
+    .optional()
     .transform((val) => {
       if (val === null || val === undefined || String(val).trim() === '') return null;
       const num = Number(String(val).replace(/[^\d.]/g, ''));
@@ -129,6 +130,7 @@ export const productSchema = z.object({
     }),
   categoryId: z
     .union([z.number(), z.string(), z.null(), z.undefined()])
+    .optional()
     .transform((val) => {
       if (val === null || val === undefined || val === '') return null;
       const n = Number(val);

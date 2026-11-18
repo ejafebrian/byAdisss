@@ -56,6 +56,16 @@ function writeStoredHome(data: PublicHomePayload) {
   }
 }
 
+export function invalidateClientCatalogCache() {
+  memoryHome = null;
+  memoryProducts.clear();
+  try {
+    localStorage.removeItem(HOME_STORAGE_KEY);
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export function filterHomePayload(
   base: PublicHomePayload,
   categorySlug?: string,
@@ -71,7 +81,8 @@ export function filterHomePayload(
       return false;
     }
     if (q) {
-      const hay = `${item.productName || ''} ${item.description || ''} ${item.label || ''}`.toLowerCase();
+      const numStr = item.productNumber ? `#${item.productNumber} ${item.productNumber}` : '';
+      const hay = `${numStr} ${item.productName || ''} ${item.description || ''} ${item.label || ''}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;

@@ -271,16 +271,30 @@ async function runCreateTables(): Promise<void> {
   await ensureProductNumberColumn();
 }
 
-async function ensureProductNumberColumn(): Promise<void> {
-  const colRes = await pool.query<{ column_name: string }>(
-    `SELECT column_name
-     FROM information_schema.columns
-     WHERE table_schema = current_schema()
-       AND table_name = 'products'
-       AND column_name = 'product_number'`
-  );
+let cachedHasProductNumberCol: boolean | null = null;
 
-  if (colRes.rows.length === 0) {
+export async function hasProductNumberColumn(): Promise<boolean> {
+  if (cachedHasProductNumberCol === true) {
+    return true;
+  }
+  try {
+    const colRes = await pool.query<{ column_name: string }>(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = current_schema()
+         AND table_name = 'products'
+         AND column_name = 'product_number'`
+    );
+    cachedHasProductNumberCol = colRes.rows.length > 0;
+    return cachedHasProductNumberCol;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureProductNumberColumn(): Promise<void> {
+  const exists = await hasProductNumberColumn();
+  if (!exists) {
     return;
   }
 

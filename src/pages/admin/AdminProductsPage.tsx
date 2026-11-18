@@ -17,6 +17,7 @@ import { Link, useRouter } from '../../lib/router';
 import { formatIdr, formatJakartaDateTime, PublicCategory } from '../../lib/types';
 import { SafeImage } from '../../components/SafeImage';
 import { useUiFeedback } from '../../components/Toast';
+import { invalidateClientCatalogCache } from '../../lib/publicCache';
 import { AdminLayout } from './AdminLayout';
 
 interface AdminProductRow {
@@ -24,6 +25,7 @@ interface AdminProductRow {
   productNumber: number | null;
   productName: string;
   productSlug: string;
+  description?: string | null;
   imageUrl: string;
   price: string | null;
   categoryId: number | null;
@@ -49,6 +51,7 @@ export function AdminProductsPage() {
   const [items, setItems] = useState<AdminProductRow[]>([]);
   const [categories, setCategories] = useState<PublicCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [status, setStatus] = useState('all');
@@ -81,6 +84,7 @@ export function AdminProductsPage() {
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const params = new URLSearchParams({
         page: String(page),
@@ -92,14 +96,18 @@ export function AdminProductsPage() {
       if (categoryId) params.set('categoryId', categoryId);
 
       const res = await authFetch(`/api/admin/products?${params.toString()}`);
-      if (!res.ok) throw new Error('Gagal memuat produk');
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json?.error || `Gagal memuat produk (HTTP ${res.status})`);
+      }
       setItems(json.items || []);
       setTotalPages(json.pagination?.totalPages || 1);
       setTotal(json.pagination?.total || 0);
       setSelectedIds([]);
     } catch (err: any) {
-      notifyError(err?.message || 'Gagal memuat daftar produk');
+      const msg = err?.message || 'Gagal memuat daftar produk';
+      setLoadError(msg);
+      notifyError(msg);
     } finally {
       setLoading(false);
     }
@@ -146,6 +154,7 @@ export function AdminProductsPage() {
       notifyError(b.error || 'Gagal melakukan aksi massal');
       return;
     }
+    invalidateClientCatalogCache();
     notifySuccess(`Berhasil memproses ${selectedIds.length} produk.`);
     setBulkCategoryModal(false);
     loadProducts();
@@ -159,6 +168,7 @@ export function AdminProductsPage() {
         productNumber: item.productNumber,
         productName: item.productName,
         productSlug: item.productSlug,
+        description: item.description ?? '',
         imageUrl: item.imageUrl,
         price: item.price,
         categoryId: item.categoryId,
@@ -171,6 +181,7 @@ export function AdminProductsPage() {
       }),
     });
     if (res.ok) {
+      invalidateClientCatalogCache();
       notifySuccess(`Status ${item.productName} diperbarui.`);
       loadProducts();
     } else {
@@ -186,6 +197,7 @@ export function AdminProductsPage() {
         productNumber: item.productNumber,
         productName: item.productName,
         productSlug: item.productSlug,
+        description: item.description ?? '',
         imageUrl: item.imageUrl,
         price: item.price,
         categoryId: item.categoryId,
@@ -198,6 +210,7 @@ export function AdminProductsPage() {
       }),
     });
     if (res.ok) {
+      invalidateClientCatalogCache();
       notifySuccess('Status unggulan diperbarui.');
       loadProducts();
     }
@@ -218,6 +231,7 @@ export function AdminProductsPage() {
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Gagal memperbarui link affiliate');
+      invalidateClientCatalogCache();
       notifySuccess(`Link affiliate "${editingLinkProduct.productName}" diperbarui.`);
       setEditingLinkProduct(null);
       loadProducts();
@@ -253,6 +267,7 @@ export function AdminProductsPage() {
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Gagal memperbarui nomor produk');
+      invalidateClientCatalogCache();
       notifySuccess(
         `Nomor produk "${editingNumberProduct.productName}" diperbarui menjadi #${json.product?.productNumber ?? '—'}.`
       );
@@ -270,6 +285,7 @@ export function AdminProductsPage() {
       method: 'POST',
     });
     if (res.ok) {
+      invalidateClientCatalogCache();
       notifySuccess(`Produk "${item.productName}" berhasil diduplikasi.`);
       loadProducts();
     } else {
@@ -287,6 +303,7 @@ export function AdminProductsPage() {
     if (!ok) return;
     const res = await authFetch(`/api/admin/products/${item.id}`, { method: 'DELETE' });
     if (res.ok) {
+      invalidateClientCatalogCache();
       notifySuccess('Produk dihapus.');
       loadProducts();
     } else {
@@ -502,7 +519,21 @@ export function AdminProductsPage() {
             </div>
           )}
 
-          {!loading && items.length === 0 && (
+          {!loading && loadError && (
+            <div className="rounded-2xl bg-[#FFF5F5] border border-red-200 p-6 text-center space-y-3">
+              <p className="text-sm font-semibold text-red-900">Gagal memuat produk</p>
+              <p className="text-xs text-red-700 break-words">{loadError}</p>
+              <button
+                type="button"
+                onClick={loadProducts}
+                className="min-h-[40px] inline-flex items-center justify-center px-4 py-2 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
+              >
+                Muat Ulang Produk
+              </button>
+            </div>
+          )}
+
+          {!loading && !loadError && items.length === 0 && (
             <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-8 text-center text-[#7D4E5D]">
               <p className="font-medium text-sm text-[#3F232C]">Belum ada produk ditemukan.</p>
               <div className="mt-4 flex flex-col sm:flex-row justify-center gap-2">
@@ -755,7 +786,23 @@ export function AdminProductsPage() {
                   </tr>
                 )}
 
-                {!loading && items.length === 0 && (
+                {!loading && loadError && (
+                  <tr>
+                    <td colSpan={14} className="p-8 text-center bg-[#FFF5F5]">
+                      <p className="font-semibold text-sm text-red-900">Gagal memuat produk</p>
+                      <p className="mt-1 text-xs text-red-700">{loadError}</p>
+                      <button
+                        type="button"
+                        onClick={loadProducts}
+                        className="mt-3 px-4 py-2 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
+                      >
+                        Muat Ulang Produk
+                      </button>
+                    </td>
+                  </tr>
+                )}
+
+                {!loading && !loadError && items.length === 0 && (
                   <tr>
                     <td colSpan={14} className="p-10 text-center text-[#7D4E5D]">
                       <p className="font-medium text-[#3F232C]">Belum ada produk ditemukan.</p>

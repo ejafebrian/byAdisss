@@ -14,6 +14,7 @@ import { useAuth } from '../../lib/authContext';
 import { Link } from '../../lib/router';
 import { formatIdr } from '../../lib/types';
 import { useUiFeedback } from '../../components/Toast';
+import { invalidateClientCatalogCache } from '../../lib/publicCache';
 import { AdminLayout } from './AdminLayout';
 
 interface PreviewRow {
@@ -193,6 +194,7 @@ export function AdminImportPage() {
       if (!res.ok) throw new Error(json.error || 'Proses import gagal');
       setProgress(100);
       setResult(json);
+      invalidateClientCatalogCache();
       notifySuccess('Proses import selesai.');
     } catch (err: any) {
       notifyError(err?.message || 'Gagal menjalankan import');

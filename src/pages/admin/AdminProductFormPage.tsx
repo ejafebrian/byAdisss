@@ -5,6 +5,7 @@ import { Link, useRouter } from '../../lib/router';
 import { PublicCategory } from '../../lib/types';
 import { SafeImage } from '../../components/SafeImage';
 import { useUiFeedback } from '../../components/Toast';
+import { invalidateClientCatalogCache } from '../../lib/publicCache';
 import { AdminLayout } from './AdminLayout';
 
 function slugifyClient(str: string) {
@@ -66,8 +67,9 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
     if (!isEdit || !productId) return;
     authFetch(`/api/admin/products/${productId}`)
       .then(async (r) => {
-        if (!r.ok) throw new Error('Produk tidak ditemukan');
-        return r.json();
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d?.error || 'Produk tidak ditemukan');
+        return d;
       })
       .then((d) => {
         const p = d.product;
@@ -191,6 +193,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Gagal menyimpan produk');
 
+      invalidateClientCatalogCache();
       notifySuccess(isEdit ? 'Produk berhasil diperbarui.' : 'Produk baru berhasil ditambahkan.');
       navigate('/admin/products');
     } catch (err: any) {

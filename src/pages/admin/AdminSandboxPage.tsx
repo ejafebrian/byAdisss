@@ -64,8 +64,8 @@ export function AdminSandboxPage() {
     setLoadingProducts(true);
     try {
       const res = await authFetch('/api/admin/products?limit=100&status=all&sort=sortOrder');
-      if (!res.ok) throw new Error('Gagal memuat daftar produk');
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || 'Gagal memuat daftar produk');
       const list: SandboxProductOption[] = json.items || [];
       setProducts(list);
 
