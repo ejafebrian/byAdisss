@@ -182,7 +182,26 @@ function renderBrandedErrorHtml(statusCode: number, title: string, message: stri
 </html>`;
 }
 
+const PUBLIC_CACHE_TTL_MS = 20_000;
+const publicResponseCache = new Map<string, { expiresAt: number; payload: any }>();
+
+export function invalidatePublicCatalogCache() {
+  publicResponseCache.clear();
+}
+
 export function registerRoutes(app: express.Express) {
+  // Automatically invalidate public catalog cache after any successful admin mutation
+  app.use('/api/admin', (req: Request, res: Response, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.on('finish', () => {
+        if (res.statusCode < 400) {
+          invalidatePublicCatalogCache();
+        }
+      });
+    }
+    next();
+  });
+
   // ==========================================
   // HEALTH CHECK
   // ==========================================
@@ -397,58 +416,19 @@ export function registerRoutes(app: express.Express) {
   // ==========================================
   app.get('/api/public/home', async (req: Request, res: Response) => {
     try {
-      await ensureInitialData();
-      const now = new Date();
       const categorySlug = typeof req.query.category === 'string' ? req.query.category.trim() : '';
       const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+      const cacheKey = `home:${categorySlug}:${search.toLowerCase()}`;
+      const cached = publicResponseCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        res.setHeader('Cache-Control', 'public, max-age=10, s-maxage=20, stale-while-revalidate=60');
+        return res.json(cached.payload);
+      }
 
-      const [profile] = await db.select().from(profiles).limit(1);
-
-      const activeBanners = await db
-        .select()
-        .from(banners)
-        .where(
-          and(
-            eq(banners.isActive, true),
-            or(isNull(banners.startsAt), lte(banners.startsAt, now)),
-            or(isNull(banners.endsAt), gte(banners.endsAt, now))
-          )
-        )
-        .orderBy(asc(banners.sortOrder), desc(banners.createdAt));
-
-      const activeCategories = await db
-        .select({
-          id: categories.id,
-          name: categories.name,
-          slug: categories.slug,
-          description: categories.description,
-          imageUrl: categories.imageUrl,
-          icon: categories.icon,
-          sortOrder: categories.sortOrder,
-          productCount: sql<number>`count(${products.id}) filter (where ${products.isActive} = true and ${products.isArchived} = false)::int`,
-        })
-        .from(categories)
-        .leftJoin(products, eq(products.categoryId, categories.id))
-        .where(eq(categories.isActive, true))
-        .groupBy(categories.id)
-        .orderBy(asc(categories.sortOrder), asc(categories.name));
-
-      const activeLinks = await db
-        .select()
-        .from(links)
-        .where(eq(links.isActive, true))
-        .orderBy(asc(links.sortOrder), asc(links.id));
+      await ensureInitialData();
+      const now = new Date();
 
       const productConditions = [eq(products.isActive, true), eq(products.isArchived, false)];
-      if (categorySlug) {
-        const matchedCat = activeCategories.find((c) => c.slug === categorySlug);
-        if (matchedCat) {
-          productConditions.push(eq(products.categoryId, matchedCat.id));
-        } else {
-          // Force empty if unknown category filter
-          productConditions.push(eq(products.id, -1));
-        }
-      }
       if (search) {
         productConditions.push(
           or(
@@ -459,57 +439,109 @@ export function registerRoutes(app: express.Express) {
         );
       }
 
-      const catalogProducts = await db
-        .select({
-          id: products.id,
-          productName: products.productName,
-          productSlug: products.productSlug,
-          description: products.description,
-          imageUrl: products.imageUrl,
-          price: products.price,
-          categoryId: products.categoryId,
-          categoryName: categories.name,
-          categorySlug: categories.slug,
-          label: products.label,
-          isFeatured: products.isFeatured,
-          sortOrder: products.sortOrder,
-        })
-        .from(products)
-        .leftJoin(categories, eq(products.categoryId, categories.id))
-        .where(and(...productConditions))
-        .orderBy(asc(products.sortOrder), desc(products.createdAt));
-
-      const featuredProducts = await db
-        .select({
-          id: products.id,
-          productName: products.productName,
-          productSlug: products.productSlug,
-          description: products.description,
-          imageUrl: products.imageUrl,
-          price: products.price,
-          categoryId: products.categoryId,
-          categoryName: categories.name,
-          categorySlug: categories.slug,
-          label: products.label,
-          isFeatured: products.isFeatured,
-          sortOrder: products.sortOrder,
-        })
-        .from(products)
-        .leftJoin(categories, eq(products.categoryId, categories.id))
-        .where(
-          and(
-            eq(products.isActive, true),
-            eq(products.isArchived, false),
-            eq(products.isFeatured, true)
+      const [
+        profileRows,
+        activeBanners,
+        activeCategories,
+        activeLinks,
+        rawCatalogProducts,
+        extraFeaturedProducts,
+      ] = await Promise.all([
+        db.select().from(profiles).limit(1),
+        db
+          .select()
+          .from(banners)
+          .where(
+            and(
+              eq(banners.isActive, true),
+              or(isNull(banners.startsAt), lte(banners.startsAt, now)),
+              or(isNull(banners.endsAt), gte(banners.endsAt, now))
+            )
           )
-        )
-        .orderBy(asc(products.sortOrder), desc(products.createdAt))
-        .limit(8);
+          .orderBy(asc(banners.sortOrder), desc(banners.createdAt)),
+        db
+          .select({
+            id: categories.id,
+            name: categories.name,
+            slug: categories.slug,
+            description: categories.description,
+            imageUrl: categories.imageUrl,
+            icon: categories.icon,
+            sortOrder: categories.sortOrder,
+            productCount: sql<number>`count(${products.id}) filter (where ${products.isActive} = true and ${products.isArchived} = false)::int`,
+          })
+          .from(categories)
+          .leftJoin(products, eq(products.categoryId, categories.id))
+          .where(eq(categories.isActive, true))
+          .groupBy(categories.id)
+          .orderBy(asc(categories.sortOrder), asc(categories.name)),
+        db
+          .select()
+          .from(links)
+          .where(eq(links.isActive, true))
+          .orderBy(asc(links.sortOrder), asc(links.id)),
+        db
+          .select({
+            id: products.id,
+            productName: products.productName,
+            productSlug: products.productSlug,
+            description: products.description,
+            imageUrl: products.imageUrl,
+            price: products.price,
+            categoryId: products.categoryId,
+            categoryName: categories.name,
+            categorySlug: categories.slug,
+            label: products.label,
+            isFeatured: products.isFeatured,
+            sortOrder: products.sortOrder,
+          })
+          .from(products)
+          .leftJoin(categories, eq(products.categoryId, categories.id))
+          .where(and(...productConditions))
+          .orderBy(asc(products.sortOrder), desc(products.createdAt)),
+        categorySlug || search
+          ? db
+              .select({
+                id: products.id,
+                productName: products.productName,
+                productSlug: products.productSlug,
+                description: products.description,
+                imageUrl: products.imageUrl,
+                price: products.price,
+                categoryId: products.categoryId,
+                categoryName: categories.name,
+                categorySlug: categories.slug,
+                label: products.label,
+                isFeatured: products.isFeatured,
+                sortOrder: products.sortOrder,
+              })
+              .from(products)
+              .leftJoin(categories, eq(products.categoryId, categories.id))
+              .where(
+                and(
+                  eq(products.isActive, true),
+                  eq(products.isArchived, false),
+                  eq(products.isFeatured, true)
+                )
+              )
+              .orderBy(asc(products.sortOrder), desc(products.createdAt))
+              .limit(8)
+          : Promise.resolve(null),
+      ]);
 
-      const settingRows = await db.select().from(settings);
-      const settingsMap = Object.fromEntries(settingRows.map((s) => [s.settingKey, s.settingValue]));
+      const profile = profileRows[0];
+      let catalogProducts = rawCatalogProducts;
+      if (categorySlug) {
+        const matchedCat = activeCategories.find((c) => c.slug === categorySlug);
+        catalogProducts = matchedCat
+          ? rawCatalogProducts.filter((p) => p.categoryId === matchedCat.id)
+          : [];
+      }
 
-      return res.json({
+      const featuredProducts =
+        extraFeaturedProducts ?? catalogProducts.filter((p) => p.isFeatured).slice(0, 8);
+
+      const payload = {
         profile,
         banners: activeBanners,
         categories: activeCategories,
@@ -517,12 +549,21 @@ export function registerRoutes(app: express.Express) {
         products: catalogProducts,
         links: activeLinks,
         privacy: {
-          enabled: settingsMap.privacy_notice_enabled !== 'false',
-          text:
-            settingsMap.privacy_notice_text ||
-            'Kami menggunakan pengenal sesi anonim untuk analitik katalog tanpa menyimpan data pribadi.',
+          enabled: false,
+          text: '',
         },
+      };
+
+      if (publicResponseCache.size > 60) {
+        publicResponseCache.clear();
+      }
+      publicResponseCache.set(cacheKey, {
+        expiresAt: Date.now() + PUBLIC_CACHE_TTL_MS,
+        payload,
       });
+
+      res.setHeader('Cache-Control', 'public, max-age=10, s-maxage=20, stale-while-revalidate=60');
+      return res.json(payload);
     } catch (err) {
       console.error('Error loading public home:', err);
       return res.status(500).json({ error: 'Gagal memuat katalog produk' });
@@ -531,8 +572,15 @@ export function registerRoutes(app: express.Express) {
 
   app.get('/api/public/products/:slug', async (req: Request, res: Response) => {
     try {
-      await ensureInitialData();
       const slug = String(req.params.slug || '').trim().toLowerCase();
+      const cacheKey = `product:${slug}`;
+      const cached = publicResponseCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        res.setHeader('Cache-Control', 'public, max-age=15, s-maxage=30, stale-while-revalidate=60');
+        return res.json(cached.payload);
+      }
+
+      await ensureInitialData();
       const rows = await db
         .select({
           id: products.id,
@@ -563,31 +611,43 @@ export function registerRoutes(app: express.Express) {
       }
 
       const product = rows[0];
-      const related = await db
-        .select({
-          id: products.id,
-          productName: products.productName,
-          productSlug: products.productSlug,
-          imageUrl: products.imageUrl,
-          price: products.price,
-          label: products.label,
-          categoryName: categories.name,
-        })
-        .from(products)
-        .leftJoin(categories, eq(products.categoryId, categories.id))
-        .where(
-          and(
-            eq(products.isActive, true),
-            eq(products.isArchived, false),
-            sql`${products.id} != ${product.id}`,
-            product.categoryId ? eq(products.categoryId, product.categoryId) : sql`true`
+      const [related, profileRows] = await Promise.all([
+        db
+          .select({
+            id: products.id,
+            productName: products.productName,
+            productSlug: products.productSlug,
+            imageUrl: products.imageUrl,
+            price: products.price,
+            label: products.label,
+            categoryName: categories.name,
+          })
+          .from(products)
+          .leftJoin(categories, eq(products.categoryId, categories.id))
+          .where(
+            and(
+              eq(products.isActive, true),
+              eq(products.isArchived, false),
+              sql`${products.id} != ${product.id}`,
+              product.categoryId ? eq(products.categoryId, product.categoryId) : sql`true`
+            )
           )
-        )
-        .orderBy(asc(products.sortOrder))
-        .limit(4);
+          .orderBy(asc(products.sortOrder))
+          .limit(4),
+        db.select().from(profiles).limit(1),
+      ]);
 
-      const [profile] = await db.select().from(profiles).limit(1);
-      return res.json({ product, related, profile });
+      const payload = { product, related, profile: profileRows[0] };
+      if (publicResponseCache.size > 60) {
+        publicResponseCache.clear();
+      }
+      publicResponseCache.set(cacheKey, {
+        expiresAt: Date.now() + PUBLIC_CACHE_TTL_MS,
+        payload,
+      });
+
+      res.setHeader('Cache-Control', 'public, max-age=15, s-maxage=30, stale-while-revalidate=60');
+      return res.json(payload);
     } catch (err) {
       console.error('Error loading product detail:', err);
       return res.status(500).json({ error: 'Gagal memuat detail produk' });

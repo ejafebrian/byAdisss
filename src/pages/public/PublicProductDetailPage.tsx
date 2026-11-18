@@ -3,40 +3,46 @@ import { ArrowLeft, ArrowUpRight, ShieldCheck } from 'lucide-react';
 import { formatIdr, PublicProduct, PublicProfile } from '../../lib/types';
 import { Link } from '../../lib/router';
 import { SafeImage } from '../../components/SafeImage';
+import { ProductDetailLoader } from '../../components/CatalogLoader';
+import { fetchProductDetail, getCachedProduct } from '../../lib/publicCache';
 import { PublicShell } from './PublicShell';
 
 export function PublicProductDetailPage({ slug }: { slug: string }) {
-  const [loading, setLoading] = useState(true);
+  const cached = getCachedProduct(slug);
+  const [loading, setLoading] = useState(!cached);
   const [notFound, setNotFound] = useState(false);
-  const [profile, setProfile] = useState<PublicProfile | null>(null);
-  const [product, setProduct] = useState<PublicProduct | null>(null);
-  const [related, setRelated] = useState<PublicProduct[]>([]);
+  const [profile, setProfile] = useState<PublicProfile | null>(cached?.profile ?? null);
+  const [product, setProduct] = useState<PublicProduct | null>(cached?.product ?? null);
+  const [related, setRelated] = useState<PublicProduct[]>(cached?.related ?? []);
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
+    const prefill = getCachedProduct(slug);
+    if (prefill) {
+      setProfile(prefill.profile || null);
+      setProduct(prefill.product || null);
+      setRelated(prefill.related || []);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     setNotFound(false);
 
-    fetch(`/api/public/products/${encodeURIComponent(slug)}`)
-      .then(async (res) => {
-        if (res.status === 404) {
-          if (active) {
-            setNotFound(true);
-            setLoading(false);
-          }
-          return null;
-        }
-        return res.json();
-      })
+    fetchProductDetail(slug)
       .then((data) => {
-        if (!active || !data) return;
+        if (!active) return;
+        if (!data) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
         setProfile(data.profile || null);
         setProduct(data.product || null);
         setRelated(data.related || []);
         setLoading(false);
       })
       .catch(() => {
-        if (active) {
+        if (active && !prefill) {
           setNotFound(true);
           setLoading(false);
         }
@@ -59,13 +65,7 @@ export function PublicProductDetailPage({ slug }: { slug: string }) {
         </Link>
       </div>
 
-      {loading && (
-        <div className="space-y-4">
-          <div className="aspect-[4/3] rounded-2xl bg-[#FFF6F8] border border-[#F0C6D2]/60 animate-pulse" />
-          <div className="h-6 w-2/3 rounded bg-[#FFF6F8] animate-pulse" />
-          <div className="h-12 rounded-xl bg-[#FFF6F8] animate-pulse" />
-        </div>
-      )}
+      {loading && <ProductDetailLoader />}
 
       {!loading && (notFound || !product) && (
         <div className="rounded-2xl border border-[#F0C6D2] bg-[#FFF6F8] p-8 text-center">
@@ -85,12 +85,13 @@ export function PublicProductDetailPage({ slug }: { slug: string }) {
       )}
 
       {!loading && product && (
-        <article className="space-y-5">
+        <article className="space-y-5 animate-fade-up-in">
           <div className="aspect-[4/3] rounded-2xl overflow-hidden border border-[#F0C6D2] bg-[#FFF6F8]">
             <SafeImage
               src={product.imageUrl}
               alt={product.productName}
               fallbackLabel={product.productName}
+              priority
               className="w-full h-full object-cover"
             />
           </div>

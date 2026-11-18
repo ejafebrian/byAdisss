@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowUpRight, ExternalLink, ShoppingBag, Sparkles, Tag } from 'lucide-react';
 import { PublicCategory, PublicLink, PublicProfile } from '../../lib/types';
+import { LinksLoader } from '../../components/CatalogLoader';
+import { fetchHomeData, getCachedHome } from '../../lib/publicCache';
 import { PublicShell } from './PublicShell';
 
 function LinkIcon({ name }: { name?: string }) {
@@ -17,21 +19,28 @@ function LinkIcon({ name }: { name?: string }) {
 }
 
 export function PublicLinksPage() {
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<PublicProfile | null>(null);
-  const [categories, setCategories] = useState<PublicCategory[]>([]);
-  const [links, setLinks] = useState<PublicLink[]>([]);
+  const initial = getCachedHome();
+  const [loading, setLoading] = useState(!initial);
+  const [profile, setProfile] = useState<PublicProfile | null>(initial?.profile ?? null);
+  const [categories, setCategories] = useState<PublicCategory[]>(initial?.categories ?? []);
+  const [links, setLinks] = useState<PublicLink[]>(initial?.links ?? []);
 
   useEffect(() => {
-    fetch('/api/public/home')
-      .then((res) => res.json())
+    let active = true;
+    fetchHomeData()
       .then((data) => {
+        if (!active) return;
         setProfile(data.profile || null);
         setCategories(data.categories || []);
         setLinks(data.links || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
@@ -46,16 +55,7 @@ export function PublicLinksPage() {
           </p>
         </div>
 
-        {loading && (
-          <div className="space-y-3">
-            {[1, 2, 3].map((n) => (
-              <div
-                key={n}
-                className="h-20 rounded-2xl bg-[#FFF6F8] border border-[#F0C6D2]/60 animate-pulse"
-              />
-            ))}
-          </div>
-        )}
+        {loading && <LinksLoader />}
 
         {!loading && links.length === 0 && (
           <div className="rounded-2xl border border-[#F0C6D2] bg-[#FFF6F8] p-8 text-center">
@@ -64,7 +64,7 @@ export function PublicLinksPage() {
         )}
 
         {!loading && links.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-3 animate-fade-up-in">
             {links.map((link) => (
               <a
                 key={link.id}

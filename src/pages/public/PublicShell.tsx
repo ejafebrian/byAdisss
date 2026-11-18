@@ -4,6 +4,8 @@ import { PublicCategory, PublicProfile } from '../../lib/types';
 import { SafeImage } from '../../components/SafeImage';
 import { Link, useRouter } from '../../lib/router';
 
+import { getCachedHome, fetchHomeData } from '../../lib/publicCache';
+
 interface PublicShellProps {
   profile: PublicProfile | null;
   categories?: PublicCategory[];
@@ -19,7 +21,9 @@ export function PublicShell({
 }: PublicShellProps) {
   const { pathname } = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [fallbackCategories, setFallbackCategories] = useState<PublicCategory[]>([]);
+  const [fallbackCategories, setFallbackCategories] = useState<PublicCategory[]>(
+    () => getCachedHome()?.categories || []
+  );
 
   useEffect(() => {
     setMenuOpen(false);
@@ -27,9 +31,9 @@ export function PublicShell({
 
   useEffect(() => {
     if (categories && categories.length > 0) return;
+    if (fallbackCategories.length > 0) return;
     let active = true;
-    fetch('/api/public/home')
-      .then((r) => (r.ok ? r.json() : null))
+    fetchHomeData()
       .then((d) => {
         if (active && d?.categories) {
           setFallbackCategories(d.categories);
@@ -39,7 +43,7 @@ export function PublicShell({
     return () => {
       active = false;
     };
-  }, [categories]);
+  }, [categories, fallbackCategories.length]);
 
   const navCategories = categories && categories.length > 0 ? categories : fallbackCategories;
 
@@ -141,6 +145,7 @@ export function PublicShell({
             <SafeImage
               src={profile?.avatarUrl || '/src/assets/images/resty_profile_avatar_1794936986435.jpg'}
               alt={profile?.brandName || 'by Adisss'}
+              priority
               className="w-full h-full rounded-full object-cover bg-[#FFF6F8]"
             />
           </div>

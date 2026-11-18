@@ -279,7 +279,29 @@ export async function ensureInitialData(): Promise<void> {
 }
 
 async function runSeed(): Promise<void> {
-  const [{ value: profileCount }] = await db.select({ value: count() }).from(profiles);
+  const [
+    [{ value: profileCount }],
+    [{ value: settingsCount }],
+    [{ value: categoryCount }],
+    [{ value: bannerCount }],
+    [{ value: linkCount }],
+  ] = await Promise.all([
+    db.select({ value: count() }).from(profiles),
+    db.select({ value: count() }).from(settings),
+    db.select({ value: count() }).from(categories),
+    db.select({ value: count() }).from(banners),
+    db.select({ value: count() }).from(links),
+  ]);
+
+  if (
+    profileCount > 0 &&
+    settingsCount > 0 &&
+    categoryCount > 0 &&
+    bannerCount > 0 &&
+    linkCount > 0
+  ) {
+    return;
+  }
 
   if (profileCount === 0) {
     await db.insert(profiles).values({
@@ -297,7 +319,6 @@ async function runSeed(): Promise<void> {
     });
   }
 
-  const [{ value: settingsCount }] = await db.select({ value: count() }).from(settings);
   if (settingsCount === 0) {
     await db
       .insert(settings)
@@ -330,7 +351,6 @@ async function runSeed(): Promise<void> {
       .onConflictDoNothing();
   }
 
-  const [{ value: categoryCount }] = await db.select({ value: count() }).from(categories);
   if (categoryCount === 0) {
     const insertedCategories = await db
       .insert(categories)
@@ -440,7 +460,6 @@ async function runSeed(): Promise<void> {
     }
   }
 
-  const [{ value: bannerCount }] = await db.select({ value: count() }).from(banners);
   if (bannerCount === 0) {
     await db.insert(banners).values({
       title: "A Little Something You'll Love ♡",
@@ -452,7 +471,6 @@ async function runSeed(): Promise<void> {
     });
   }
 
-  const [{ value: linkCount }] = await db.select({ value: count() }).from(links);
   if (linkCount === 0) {
     await db.insert(links).values([
       {

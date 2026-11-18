@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import { AuthProvider } from './lib/authContext';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { RouterProvider, useRouter } from './lib/router';
 import { sendPublicHeartbeat, trackPublicPageView } from './lib/tracking';
 import { UiFeedbackProvider } from './components/Toast';
@@ -7,19 +6,19 @@ import { PublicHomePage } from './pages/public/PublicHomePage';
 import { PublicLinksPage } from './pages/public/PublicLinksPage';
 import { PublicProductDetailPage } from './pages/public/PublicProductDetailPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { AdminLoginPage } from './pages/admin/AdminLoginPage';
-import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
-import { AdminProductsPage } from './pages/admin/AdminProductsPage';
-import { AdminProductFormPage } from './pages/admin/AdminProductFormPage';
-import { AdminImportPage } from './pages/admin/AdminImportPage';
-import { AdminImportHistoryPage } from './pages/admin/AdminImportHistoryPage';
-import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage';
-import { AdminLinksPage } from './pages/admin/AdminLinksPage';
-import { AdminBannersPage } from './pages/admin/AdminBannersPage';
-import { AdminProfilePage } from './pages/admin/AdminProfilePage';
-import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
-import { AdminAccountsPage } from './pages/admin/AdminAccountsPage';
-import { AdminSandboxPage } from './pages/admin/AdminSandboxPage';
+
+const LazyAdminApp = lazy(() => import('./pages/admin/AdminApp'));
+
+function AdminChunkLoader() {
+  return (
+    <div className="min-h-screen bg-[#FFF6F8] flex flex-col items-center justify-center p-6 text-center">
+      <div className="w-11 h-11 rounded-full border-2 border-[#F0C6D2] border-t-[#C25B7C] animate-orbit-spin" />
+      <p className="mt-3 font-serif-display text-base font-medium text-[#3F232C]">
+        Memuat Portal Admin by Adisss...
+      </p>
+    </div>
+  );
+}
 
 function AppRoutes() {
   const { pathname } = useRouter();
@@ -39,7 +38,7 @@ function AppRoutes() {
     return () => clearInterval(interval);
   }, [normalizedPath]);
 
-  // Public Routes
+  // Public Routes (Zero Firebase / Admin JS overhead)
   if (normalizedPath === '/') {
     return <PublicHomePage />;
   }
@@ -55,52 +54,13 @@ function AppRoutes() {
     return <PublicProductDetailPage slug={decodeURIComponent(productMatch[1])} />;
   }
 
-  // Admin Routes
-  if (normalizedPath === '/admin/login') {
-    return <AdminLoginPage />;
-  }
-  if (normalizedPath === '/admin') {
-    return <AdminDashboardPage />;
-  }
-  if (normalizedPath === '/admin/analytics') {
-    return <AdminDashboardPage isAnalyticsView />;
-  }
-  if (normalizedPath === '/admin/products') {
-    return <AdminProductsPage />;
-  }
-  if (normalizedPath === '/admin/products/add') {
-    return <AdminProductFormPage />;
-  }
-  const editMatch = normalizedPath.match(/^\/admin\/products\/(\d+)\/edit$/);
-  if (editMatch) {
-    return <AdminProductFormPage productId={Number(editMatch[1])} />;
-  }
-  if (normalizedPath === '/admin/products/import') {
-    return <AdminImportPage />;
-  }
-  if (normalizedPath === '/admin/sandbox') {
-    return <AdminSandboxPage />;
-  }
-  if (normalizedPath === '/admin/categories') {
-    return <AdminCategoriesPage />;
-  }
-  if (normalizedPath === '/admin/links') {
-    return <AdminLinksPage />;
-  }
-  if (normalizedPath === '/admin/banners') {
-    return <AdminBannersPage />;
-  }
-  if (normalizedPath === '/admin/import-history') {
-    return <AdminImportHistoryPage />;
-  }
-  if (normalizedPath === '/admin/settings') {
-    return <AdminSettingsPage />;
-  }
-  if (normalizedPath === '/admin/profile') {
-    return <AdminProfilePage />;
-  }
-  if (normalizedPath === '/admin/account') {
-    return <AdminAccountsPage />;
+  // Lazy-loaded Admin Routes (loads Firebase & Admin tools only when needed)
+  if (normalizedPath.startsWith('/admin')) {
+    return (
+      <Suspense fallback={<AdminChunkLoader />}>
+        <LazyAdminApp normalizedPath={normalizedPath} />
+      </Suspense>
+    );
   }
 
   return <NotFoundPage />;
@@ -109,11 +69,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <RouterProvider>
-      <AuthProvider>
-        <UiFeedbackProvider>
-          <AppRoutes />
-        </UiFeedbackProvider>
-      </AuthProvider>
+      <UiFeedbackProvider>
+        <AppRoutes />
+      </UiFeedbackProvider>
     </RouterProvider>
   );
 }
