@@ -155,11 +155,11 @@ export function AdminLoginPage() {
           <h1 className="mt-1 font-serif-display text-3xl font-semibold text-[#3F232C]">
             by Adisss
           </h1>
-          <p className="mt-2 text-xs text-[#7D4E5D] leading-relaxed">
-            {mode === 'login'
-              ? 'Masuk dengan akun Google admin terdaftar untuk mengelola katalog, Link Sandbox, import Google Sheet, dan analitik.'
-              : 'Reset password akun admin terdaftar.'}
-          </p>
+          {mode === 'reset' && (
+            <p className="mt-2 text-xs text-[#7D4E5D] leading-relaxed">
+              Reset password akun admin terdaftar.
+            </p>
+          )}
         </div>
 
         {displayError && (

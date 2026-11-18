@@ -71,25 +71,6 @@ export function CatalogLoader() {
         </div>
       </div>
 
-      {/* Category Grid Skeleton */}
-      <div>
-        <div className="h-4 w-32 rounded-md rose-shimmer mb-3" />
-        <div className="grid grid-cols-2 gap-2.5">
-          {[1, 2, 3, 4].map((n) => (
-            <div
-              key={n}
-              className="h-[54px] rounded-xl border border-[#F0C6D2]/70 bg-[#FFF6F8] px-3 flex items-center gap-2.5"
-            >
-              <div className="w-8 h-8 rounded-lg rose-shimmer shrink-0" />
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3 w-3/4 rounded rose-shimmer" />
-                <div className="h-2.5 w-1/2 rounded rose-shimmer" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Featured Cards Skeleton */}
       <div>
         <div className="h-4 w-40 rounded-md rose-shimmer mb-3" />

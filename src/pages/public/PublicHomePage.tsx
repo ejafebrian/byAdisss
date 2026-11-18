@@ -2,13 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowUpRight,
   ChevronRight,
-  Coffee,
-  Flame,
-  Home,
   Search,
   ShoppingBag,
-  Sparkles,
-  Tag,
   X,
 } from 'lucide-react';
 import {
@@ -23,23 +18,6 @@ import { SafeImage } from '../../components/SafeImage';
 import { CatalogInlineLoader, CatalogLoader } from '../../components/CatalogLoader';
 import { fetchHomeData, getCachedHome } from '../../lib/publicCache';
 import { PublicShell } from './PublicShell';
-
-function CategoryIcon({ name, className = 'w-4 h-4' }: { name?: string; className?: string }) {
-  switch (name) {
-    case 'Flame':
-      return <Flame className={className} />;
-    case 'ShoppingBag':
-      return <ShoppingBag className={className} />;
-    case 'Home':
-      return <Home className={className} />;
-    case 'Coffee':
-      return <Coffee className={className} />;
-    case 'Tag':
-      return <Tag className={className} />;
-    default:
-      return <Sparkles className={className} />;
-  }
-}
 
 export function PublicHomePage({ categorySlug }: { categorySlug?: string }) {
   const { navigate } = useRouter();
@@ -206,62 +184,6 @@ export function PublicHomePage({ categorySlug }: { categorySlug?: string }) {
             </div>
           </section>
 
-          {/* Categories Grid */}
-          {categories.length > 0 && (
-            <section aria-label="Kategori Produk">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-serif-display text-lg font-semibold text-[#3F232C]">
-                  Kategori Pilihan
-                </h2>
-                {categorySlug && (
-                  <button
-                    type="button"
-                    onClick={() => navigate('/')}
-                    className="text-xs font-medium text-[#C25B7C] underline underline-offset-4 hover:text-[#A84867]"
-                  >
-                    Lihat Semua
-                  </button>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
-                {categories.map((cat) => {
-                  const selected = cat.slug === categorySlug;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => navigate(selected ? '/' : `/category/${cat.slug}`)}
-                      className={`min-h-[52px] flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-left transition-colors ${
-                        selected
-                          ? 'bg-[#C25B7C] border-[#C25B7C] text-[#FFFFFF]'
-                          : 'bg-[#FFF6F8] border-[#F0C6D2] text-[#3F232C] hover:bg-[#FDE8EE]'
-                      }`}
-                    >
-                      <span
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          selected ? 'bg-white/20 text-white' : 'bg-[#FDE8EE] text-[#C25B7C]'
-                        }`}
-                      >
-                        <CategoryIcon name={cat.icon} className="w-4 h-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs font-semibold truncate">{cat.name}</div>
-                        <div
-                          className={`text-[11px] tabular-nums ${
-                            selected ? 'text-white/85' : 'text-[#7D4E5D]'
-                          }`}
-                        >
-                          {cat.productCount ?? 0} produk
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
           {/* Featured Products */}
           {!categorySlug && !debouncedSearch && featuredProducts.length > 0 && (
             <section aria-label="Produk Unggulan">
@@ -327,8 +249,8 @@ export function PublicHomePage({ categorySlug }: { categorySlug?: string }) {
 
           {/* Main Catalog */}
           <section id="catalog" aria-label="Katalog Produk">
-            <div className="flex items-baseline justify-between mb-3">
-              <div>
+            <div className="flex items-baseline justify-between gap-2 mb-3">
+              <div className="min-w-0">
                 <h2 className="font-serif-display text-lg font-semibold text-[#3F232C]">
                   {activeCategoryObj ? activeCategoryObj.name : 'Semua Katalog Produk'}
                 </h2>
@@ -336,11 +258,22 @@ export function PublicHomePage({ categorySlug }: { categorySlug?: string }) {
                   <p className="text-xs text-[#7D4E5D] mt-0.5">{activeCategoryObj.description}</p>
                 )}
               </div>
-              {!refreshingList && (
-                <span className="text-xs text-[#7D4E5D] tabular-nums shrink-0">
-                  {products.length} item
-                </span>
-              )}
+              <div className="flex items-center gap-3 shrink-0">
+                {categorySlug && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/')}
+                    className="text-xs font-medium text-[#C25B7C] underline underline-offset-4 hover:text-[#A84867]"
+                  >
+                    Semua Produk
+                  </button>
+                )}
+                {!refreshingList && (
+                  <span className="text-xs text-[#7D4E5D] tabular-nums">
+                    {products.length} item
+                  </span>
+                )}
+              </div>
             </div>
 
             {refreshingList && <CatalogInlineLoader />}

@@ -75,7 +75,7 @@ export function PublicShell({
 
         {/* Hamburger Catalog Drawer (Strictly Catalog & Categories only) */}
         {menuOpen && (
-          <div className="absolute inset-x-0 top-14 z-40 bg-[#FFFFFF] border-b border-[#F0C6D2] shadow-lg px-5 py-4 space-y-4">
+          <div className="absolute inset-x-0 top-14 z-40 max-h-[calc(100vh-3.5rem)] overflow-y-auto bg-[#FFFFFF] border-b border-[#F0C6D2] shadow-lg px-5 py-4 space-y-4">
             <div className="space-y-1">
               <Link
                 to="/"

@@ -222,7 +222,7 @@ export function AdminLayout({
         {/* Mobile & Tablet Bottom Quick Navigation (< 1024px) */}
         <nav
           aria-label="Navigasi Cepat Admin"
-          className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-[#FFFFFF]/95 backdrop-blur-md border-t border-[#F0C6D2] px-2 py-1 grid grid-cols-4 gap-1"
+          className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-[#FFFFFF]/95 backdrop-blur-md border-t border-[#F0C6D2] px-2 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] grid grid-cols-4 gap-1"
         >
           {[
             { label: 'Dashboard', to: '/admin', icon: LayoutDashboard },

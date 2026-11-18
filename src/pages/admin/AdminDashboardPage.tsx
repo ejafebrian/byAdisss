@@ -469,25 +469,25 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
                 </div>
 
                 {/* Compact Daily Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
+                <div className="overflow-x-auto -mx-1 px-1">
+                  <table className="w-full min-w-[420px] text-xs">
                     <thead>
                       <tr className="text-left text-[#7D4E5D] border-b border-[#F0C6D2]/60">
-                        <th className="py-2 font-medium">Tanggal</th>
-                        <th className="py-2 font-medium text-right">Page Views</th>
-                        <th className="py-2 font-medium text-right">Unique Visitors</th>
-                        <th className="py-2 font-medium text-right">Clicks</th>
-                        <th className="py-2 font-medium text-right">CTR</th>
+                        <th className="py-2 pr-2 font-medium">Tanggal</th>
+                        <th className="py-2 px-2 font-medium text-right">Page Views</th>
+                        <th className="py-2 px-2 font-medium text-right">Unique Visitors</th>
+                        <th className="py-2 px-2 font-medium text-right">Clicks</th>
+                        <th className="py-2 pl-2 font-medium text-right">CTR</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#F0C6D2]/40 tabular-nums">
                       {data.dailySeries.map((d) => (
                         <tr key={d.day}>
-                          <td className="py-2 font-mono-tabular">{d.day}</td>
-                          <td className="py-2 text-right">{d.pageViews}</td>
-                          <td className="py-2 text-right">{d.uniqueVisitors}</td>
-                          <td className="py-2 text-right font-medium text-[#3F232C]">{d.clicks}</td>
-                          <td className="py-2 text-right">{d.ctr}%</td>
+                          <td className="py-2 pr-2 font-mono-tabular whitespace-nowrap">{d.day}</td>
+                          <td className="py-2 px-2 text-right">{d.pageViews}</td>
+                          <td className="py-2 px-2 text-right">{d.uniqueVisitors}</td>
+                          <td className="py-2 px-2 text-right font-medium text-[#3F232C]">{d.clicks}</td>
+                          <td className="py-2 pl-2 text-right">{d.ctr}%</td>
                         </tr>
                       ))}
                     </tbody>
@@ -498,15 +498,15 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
           </div>
 
           {/* Live Activity Feed */}
-          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-5 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h2 className="font-serif-display text-lg font-semibold text-[#3F232C]">
+          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-5 flex flex-col min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="min-w-0">
+                <h2 className="font-serif-display text-base sm:text-lg font-semibold text-[#3F232C] truncate">
                   Aktivitas Terbaru
                 </h2>
-                <p className="text-xs text-[#7D4E5D]">Pembaruan klik & kunjungan real-time</p>
+                <p className="text-xs text-[#7D4E5D] truncate">Pembaruan klik & kunjungan real-time</p>
               </div>
-              <span className="text-xs font-semibold text-[#C25B7C] tabular-nums">
+              <span className="text-xs font-semibold text-[#C25B7C] tabular-nums shrink-0">
                 {kpis?.activeVisitors ?? 0} aktif
               </span>
             </div>
@@ -521,18 +521,18 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
                 {data.recentClicks.map((clk) => (
                   <div
                     key={`clk-${clk.id}`}
-                    className="p-3 rounded-xl bg-[#FFF6F8] border border-[#F0C6D2]/70 text-xs"
+                    className="p-3 rounded-xl bg-[#FFF6F8] border border-[#F0C6D2]/70 text-xs min-w-0"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-[#3F232C] truncate">
+                      <span className="font-semibold text-[#3F232C] truncate min-w-0">
                         Klik: {clk.productName || clk.linkTitle || 'Item'}
                       </span>
                       <span className="text-[11px] text-[#7D4E5D] shrink-0">
                         {clk.deviceType}
                       </span>
                     </div>
-                    <div className="mt-1 flex items-center justify-between text-[11px] text-[#7D4E5D]">
-                      <span className="truncate">Sumber: {clk.referrer || 'direct'}</span>
+                    <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-[#7D4E5D]">
+                      <span className="truncate min-w-0">Sumber: {clk.referrer || 'direct'}</span>
                       <span className="tabular-nums shrink-0">
                         {formatJakartaDateTime(clk.clickedAt)}
                       </span>
@@ -543,10 +543,10 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
                 {data.recentViews.slice(0, 5).map((pv) => (
                   <div
                     key={`pv-${pv.id}`}
-                    className="p-2.5 rounded-xl border border-[#F0C6D2]/50 text-xs"
+                    className="p-2.5 rounded-xl border border-[#F0C6D2]/50 text-xs min-w-0"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[#3F232C] truncate">View: {pv.pageUrl}</span>
+                      <span className="text-[#3F232C] truncate min-w-0">View: {pv.pageUrl}</span>
                       <span className="text-[11px] text-[#7D4E5D] shrink-0">{pv.deviceType}</span>
                     </div>
                     <div className="mt-0.5 text-[11px] text-[#7D4E5D] tabular-nums">
@@ -560,17 +560,17 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
         </section>
 
         {/* Top Products, Categories, Sources & Devices */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Top Products */}
-          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-serif-display text-base font-semibold text-[#3F232C]">
+          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-5 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h2 className="font-serif-display text-base font-semibold text-[#3F232C] truncate">
                 Top Products
               </h2>
               <button
                 type="button"
                 onClick={() => handleExport('top_products')}
-                className="text-xs text-[#C25B7C] hover:text-[#A84867] underline underline-offset-4"
+                className="text-xs text-[#C25B7C] hover:text-[#A84867] underline underline-offset-4 shrink-0"
               >
                 Export CSV
               </button>
@@ -580,12 +580,12 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
             ) : (
               <div className="space-y-3">
                 {data.topProducts.map((p) => (
-                  <div key={p.productId} className="flex items-center justify-between gap-3 text-xs">
-                    <div className="min-w-0">
+                  <div key={p.productId} className="flex items-center justify-between gap-3 text-xs min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="font-medium text-[#3F232C] truncate">{p.productName}</div>
-                      <div className="text-[11px] text-[#C25B7C] flex items-center gap-1">
-                        <span>/go/{p.productSlug}</span>
-                        <ExternalLink className="w-3 h-3" />
+                      <div className="text-[11px] text-[#C25B7C] flex items-center gap-1 min-w-0">
+                        <span className="truncate">/go/{p.productSlug}</span>
+                        <ExternalLink className="w-3 h-3 shrink-0" />
                       </div>
                     </div>
                     <div className="text-right shrink-0 tabular-nums">
@@ -599,7 +599,7 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
           </div>
 
           {/* Top Categories */}
-          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-5">
+          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-5 min-w-0">
             <h2 className="font-serif-display text-base font-semibold text-[#3F232C] mb-3">
               Top Categories
             </h2>
@@ -611,10 +611,10 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
                   const maxCat = Math.max(1, data.topCategories[0]?.clicks || 1);
                   const pct = Math.round((c.clicks / maxCat) * 100);
                   return (
-                    <div key={c.categoryId} className="space-y-1 text-xs">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-[#3F232C]">{c.categoryName}</span>
-                        <span className="tabular-nums text-[#7D4E5D]">{c.clicks} klik</span>
+                    <div key={c.categoryId} className="space-y-1 text-xs min-w-0">
+                      <div className="flex justify-between gap-2">
+                        <span className="font-medium text-[#3F232C] truncate">{c.categoryName}</span>
+                        <span className="tabular-nums text-[#7D4E5D] shrink-0">{c.clicks} klik</span>
                       </div>
                       <div className="h-2 rounded-full bg-[#FFF6F8] overflow-hidden">
                         <div
@@ -630,8 +630,8 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
           </div>
 
           {/* Traffic Sources & Devices */}
-          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-5 space-y-5">
-            <div>
+          <div className="md:col-span-2 lg:col-span-1 rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-5 min-w-0">
+            <div className="min-w-0">
               <h2 className="font-serif-display text-base font-semibold text-[#3F232C] mb-2.5">
                 Traffic Sources
               </h2>
@@ -640,16 +640,16 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
               ) : (
                 <div className="space-y-2 text-xs">
                   {data.trafficSources.map((s) => (
-                    <div key={s.source} className="flex justify-between">
+                    <div key={s.source} className="flex justify-between gap-2 min-w-0">
                       <span className="text-[#3F232C] truncate">{s.source}</span>
-                      <span className="tabular-nums font-medium text-[#7D4E5D]">{s.visits}</span>
+                      <span className="tabular-nums font-medium text-[#7D4E5D] shrink-0">{s.visits}</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="pt-4 border-t border-[#F0C6D2]/60">
+            <div className="pt-4 sm:pt-0 sm:pl-5 sm:border-l lg:pl-0 lg:border-l-0 lg:pt-4 border-t sm:border-t-0 lg:border-t border-[#F0C6D2]/60 min-w-0">
               <h2 className="font-serif-display text-base font-semibold text-[#3F232C] mb-2.5">
                 Device Distribution
               </h2>
@@ -658,9 +658,9 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
               ) : (
                 <div className="space-y-2 text-xs">
                   {data.deviceDistribution.map((d) => (
-                    <div key={d.deviceType} className="flex justify-between capitalize">
-                      <span className="text-[#3F232C]">{d.deviceType}</span>
-                      <span className="tabular-nums font-medium text-[#7D4E5D]">{d.count}</span>
+                    <div key={d.deviceType} className="flex justify-between gap-2 capitalize">
+                      <span className="text-[#3F232C] truncate">{d.deviceType}</span>
+                      <span className="tabular-nums font-medium text-[#7D4E5D] shrink-0">{d.count}</span>
                     </div>
                   ))}
                 </div>
