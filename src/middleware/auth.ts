@@ -81,10 +81,12 @@ export const requireAdmin = async (
         .limit(1);
     }
 
-    // Bootstrap owner email or first-ever admin if admins table is empty
+    // Bootstrap owner email (with verified email) or first-ever admin if admins table is empty
     if (!found.length) {
       const existingAdmins = await db.select({ id: admins.id }).from(admins).limit(1);
-      if (existingAdmins.length === 0 || DEFAULT_OWNER_EMAILS.includes(email)) {
+      const isVerifiedOwner =
+        Boolean(decodedToken.email_verified) && DEFAULT_OWNER_EMAILS.includes(email);
+      if (existingAdmins.length === 0 || isVerifiedOwner) {
         const [inserted] = await db
           .insert(admins)
           .values({

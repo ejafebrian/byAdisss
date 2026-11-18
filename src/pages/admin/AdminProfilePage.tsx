@@ -102,13 +102,13 @@ export function AdminProfilePage() {
           Memuat profil...
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="max-w-3xl rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-6 space-y-5">
-          <div className="flex items-center gap-5">
+        <form onSubmit={handleSubmit} className="max-w-3xl rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-6 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
             <div className="w-20 h-20 rounded-full overflow-hidden border border-[#F0C6D2] bg-[#FFF6F8] shrink-0">
               <SafeImage src={avatarUrl} alt={brandName} className="w-full h-full object-cover" />
             </div>
             <div className="space-y-2">
-              <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE] text-xs font-medium text-[#3F232C] cursor-pointer">
+              <label className="min-h-[42px] inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE] text-xs font-medium text-[#3F232C] cursor-pointer">
                 <Upload className="w-3.5 h-3.5 text-[#C25B7C]" />
                 <span>{uploading ? 'Mengunggah...' : 'Ganti Foto Profil'}</span>
                 <input
@@ -130,7 +130,7 @@ export function AdminProfilePage() {
                 required
                 value={brandName}
                 onChange={(e) => setBrandName(e.target.value)}
-                className="w-full min-h-[42px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
+                className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
               />
             </div>
             <div>
@@ -140,7 +140,7 @@ export function AdminProfilePage() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full min-h-[42px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
+                className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
               />
             </div>
           </div>
@@ -152,7 +152,7 @@ export function AdminProfilePage() {
               required
               value={tagline}
               onChange={(e) => setTagline(e.target.value)}
-              className="w-full min-h-[42px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
+              className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
             />
           </div>
 
@@ -173,7 +173,7 @@ export function AdminProfilePage() {
                 type="url"
                 value={instagramUrl}
                 onChange={(e) => setInstagramUrl(e.target.value)}
-                className="w-full min-h-[40px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
+                className="w-full min-h-[42px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
               />
             </div>
             <div>
@@ -182,7 +182,7 @@ export function AdminProfilePage() {
                 type="url"
                 value={tiktokUrl}
                 onChange={(e) => setTiktokUrl(e.target.value)}
-                className="w-full min-h-[40px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
+                className="w-full min-h-[42px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
               />
             </div>
           </div>
@@ -193,7 +193,7 @@ export function AdminProfilePage() {
               type="text"
               value={footerText}
               onChange={(e) => setFooterText(e.target.value)}
-              className="w-full min-h-[40px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
+              className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
             />
           </div>
 
@@ -201,7 +201,7 @@ export function AdminProfilePage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
+              className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
             >
               <Save className="w-4 h-4" />
               <span>{saving ? 'Menyimpan...' : 'Simpan Profil'}</span>

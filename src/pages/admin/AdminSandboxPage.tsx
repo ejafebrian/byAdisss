@@ -185,9 +185,9 @@ export function AdminSandboxPage() {
       title="Affiliate Link Sandbox"
       subtitle="Uji validasi domain Shopee, periksa parameter tracking, simulasi redirect /go/[slug], dan simpan link tanpa mencatat klik dummy"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
         {/* Left: Product Selector List */}
-        <section className="lg:col-span-5 rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-5 space-y-4 self-start">
+        <section className="lg:col-span-5 rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-5 space-y-4 self-start min-w-0">
           <div>
             <h2 className="font-serif-display text-lg font-semibold text-[#3F232C]">
               1. Pilih Produk Target
@@ -204,15 +204,15 @@ export function AdminSandboxPage() {
               value={productFilter}
               onChange={(e) => setProductFilter(e.target.value)}
               placeholder="Filter produk atau slug..."
-              className="w-full min-h-[40px] pl-9 pr-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs text-[#3F232C] focus:outline-none focus:border-[#C25B7C]"
+              className="w-full min-h-[42px] pl-9 pr-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs text-[#3F232C] focus:outline-none focus:border-[#C25B7C]"
             />
           </div>
 
-          <div className="max-h-[380px] overflow-y-auto space-y-1.5 pr-1">
+          <div className="max-h-[260px] lg:max-h-[420px] overflow-y-auto space-y-1.5 pr-1">
             <button
               type="button"
               onClick={() => handleSelectProduct('')}
-              className={`w-full text-left px-3.5 py-2.5 rounded-xl border text-xs transition-colors ${
+              className={`w-full min-h-[42px] text-left px-3.5 py-2.5 rounded-xl border text-xs transition-colors ${
                 selectedProductId === ''
                   ? 'bg-[#FDE8EE] border-[#C25B7C] text-[#3F232C] font-semibold'
                   : 'bg-[#FFF6F8] border-[#F0C6D2]/60 text-[#7D4E5D] hover:border-[#F0C6D2]'
@@ -267,18 +267,18 @@ export function AdminSandboxPage() {
         </section>
 
         {/* Right: Sandbox Editor & Inspector */}
-        <section className="lg:col-span-7 space-y-5">
+        <section className="lg:col-span-7 space-y-5 min-w-0">
           <form
             onSubmit={handleTestLink}
-            className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-5 space-y-4"
+            className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-5 space-y-4"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div className="min-w-0">
                 <h2 className="font-serif-display text-lg font-semibold text-[#3F232C] flex items-center gap-2">
-                  <FlaskConical className="w-5 h-5 text-[#C25B7C]" />
+                  <FlaskConical className="w-5 h-5 text-[#C25B7C] shrink-0" />
                   <span>2. Sandbox Editor & Pengujian Link</span>
                 </h2>
-                <p className="text-xs text-[#7D4E5D] mt-0.5">
+                <p className="text-xs text-[#7D4E5D] mt-0.5 break-words">
                   {selectedProduct
                     ? `Mengedit tautan tujuan untuk "${selectedProduct.productName}" (/go/${selectedProduct.productSlug})`
                     : 'Tempel tautan affiliate Shopee untuk memeriksa validitas protokol & domain.'}
@@ -289,7 +289,7 @@ export function AdminSandboxPage() {
                   href={`/go/${encodeURIComponent(selectedProduct.productSlug)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE] text-xs font-medium text-[#3F232C] shrink-0"
+                  className="min-h-[38px] self-start inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE] text-xs font-medium text-[#3F232C] shrink-0"
                 >
                   <span>Tes /go/ Live</span>
                   <ExternalLink className="w-3.5 h-3.5 text-[#C25B7C]" />
@@ -314,13 +314,13 @@ export function AdminSandboxPage() {
               />
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
               <button
                 type="submit"
                 disabled={testing}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#C25B7C] text-[#C25B7C] hover:bg-[#FDE8EE]/60 disabled:opacity-60 text-xs font-medium transition-colors"
+                className="min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#C25B7C] text-[#C25B7C] hover:bg-[#FDE8EE]/60 disabled:opacity-60 text-xs font-medium transition-colors"
               >
-                <ShieldCheck className="w-4 h-4" />
+                <ShieldCheck className="w-4 h-4 shrink-0" />
                 <span>{testing ? 'Menguji...' : 'Uji Validasi & Simulasi Redirect'}</span>
               </button>
 
@@ -329,9 +329,9 @@ export function AdminSandboxPage() {
                   type="button"
                   disabled={saving || !testUrl.trim()}
                   onClick={handleSaveAffiliateUrl}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] disabled:opacity-60 text-white text-xs font-medium transition-colors"
+                  className="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] disabled:opacity-60 text-white text-xs font-medium transition-colors"
                 >
-                  <Save className="w-4 h-4" />
+                  <Save className="w-4 h-4 shrink-0" />
                   <span>{saving ? 'Menyimpan...' : 'Simpan Link ke Produk'}</span>
                 </button>
               )}

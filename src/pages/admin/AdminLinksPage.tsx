@@ -195,56 +195,52 @@ export function AdminLinksPage() {
           </button>
         </form>
 
-        <div className="lg:col-span-2 rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] overflow-hidden">
-          <table className="w-full text-xs">
-            <thead className="bg-[#FFF6F8] border-b border-[#F0C6D2] text-[#7D4E5D]">
-              <tr>
-                <th className="p-3 text-left">Judul</th>
-                <th className="p-3 text-left">Slug Redirect</th>
-                <th className="p-3 text-right">Clicks</th>
-                <th className="p-3 text-center">Status</th>
-                <th className="p-3 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F0C6D2]/60">
-              {loading && (
-                <tr>
-                  <td colSpan={5} className="p-6 text-center text-[#7D4E5D]">
-                    Memuat tautan...
-                  </td>
-                </tr>
-              )}
-              {!loading &&
-                items.map((l) => (
-                  <tr key={l.id} className="hover:bg-[#FFF6F8]/70">
-                    <td className="p-3">
-                      <div className="font-semibold text-[#3F232C]">{l.title}</div>
-                      <div className="text-[11px] text-[#7D4E5D] truncate max-w-xs">{l.url}</div>
-                    </td>
-                    <td className="p-3 font-mono-tabular">
+        <div className="lg:col-span-2 min-w-0 space-y-3">
+          {/* Mobile Card View (< 768px) */}
+          <div className="md:hidden space-y-3">
+            {loading && (
+              <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-6 text-center text-xs text-[#7D4E5D]">
+                Memuat tautan...
+              </div>
+            )}
+            {!loading &&
+              items.map((l) => (
+                <div
+                  key={l.id}
+                  className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 space-y-2.5 text-xs"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm text-[#3F232C] truncate">{l.title}</div>
+                      <div className="text-[11px] text-[#7D4E5D] truncate">{l.url}</div>
+                    </div>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium shrink-0 ${
+                        l.isActive
+                          ? 'bg-emerald-50 text-emerald-800'
+                          : 'bg-amber-50 text-amber-800'
+                      }`}
+                    >
+                      {l.isActive ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#F0C6D2]/60">
+                    <div className="flex items-center gap-3 min-w-0">
                       <a
                         href={`/l/${encodeURIComponent(l.slug)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[#C25B7C] hover:text-[#A84867]"
+                        className="inline-flex items-center gap-1 font-mono-tabular text-[#C25B7C] truncate"
                       >
                         <span>/l/{l.slug}</span>
-                        <ExternalLink className="w-3 h-3" />
+                        <ExternalLink className="w-3 h-3 shrink-0" />
                       </a>
-                    </td>
-                    <td className="p-3 text-right tabular-nums font-medium">{l.clicks ?? 0}</td>
-                    <td className="p-3 text-center">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[11px] font-medium ${
-                          l.isActive
-                            ? 'bg-emerald-50 text-emerald-800'
-                            : 'bg-amber-50 text-amber-800'
-                        }`}
-                      >
-                        {l.isActive ? 'Aktif' : 'Nonaktif'}
+                      <span className="tabular-nums text-[#7D4E5D] shrink-0">
+                        {l.clicks ?? 0} klik
                       </span>
-                    </td>
-                    <td className="p-3 text-right whitespace-nowrap">
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
                         onClick={() => {
@@ -257,22 +253,105 @@ export function AdminLinksPage() {
                           setSortOrder(String(l.sortOrder ?? 0));
                           setIsActive(l.isActive !== false);
                         }}
-                        className="p-1.5 rounded-lg text-[#C25B7C] hover:bg-[#FDE8EE]"
+                        className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-[#C25B7C] hover:bg-[#FDE8EE]"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
+                        <Edit3 className="w-4 h-4" />
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDelete(l)}
-                        className="p-1.5 rounded-lg text-red-700 hover:bg-red-50"
+                        className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-red-700 hover:bg-red-50"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
-                    </td>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+
+          {/* Tablet & Desktop Table (>= 768px) */}
+          <div className="hidden md:block rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-[#FFF6F8] border-b border-[#F0C6D2] text-[#7D4E5D]">
+                  <tr>
+                    <th className="p-3 text-left">Judul</th>
+                    <th className="p-3 text-left">Slug Redirect</th>
+                    <th className="p-3 text-right">Clicks</th>
+                    <th className="p-3 text-center">Status</th>
+                    <th className="p-3 text-right">Aksi</th>
                   </tr>
-                ))}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-[#F0C6D2]/60">
+                  {loading && (
+                    <tr>
+                      <td colSpan={5} className="p-6 text-center text-[#7D4E5D]">
+                        Memuat tautan...
+                      </td>
+                    </tr>
+                  )}
+                  {!loading &&
+                    items.map((l) => (
+                      <tr key={l.id} className="hover:bg-[#FFF6F8]/70">
+                        <td className="p-3">
+                          <div className="font-semibold text-[#3F232C]">{l.title}</div>
+                          <div className="text-[11px] text-[#7D4E5D] truncate max-w-xs">{l.url}</div>
+                        </td>
+                        <td className="p-3 font-mono-tabular">
+                          <a
+                            href={`/l/${encodeURIComponent(l.slug)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[#C25B7C] hover:text-[#A84867]"
+                          >
+                            <span>/l/{l.slug}</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </td>
+                        <td className="p-3 text-right tabular-nums font-medium">{l.clicks ?? 0}</td>
+                        <td className="p-3 text-center">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                              l.isActive
+                                ? 'bg-emerald-50 text-emerald-800'
+                                : 'bg-amber-50 text-amber-800'
+                            }`}
+                          >
+                            {l.isActive ? 'Aktif' : 'Nonaktif'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingId(l.id);
+                              setTitle(l.title);
+                              setSlug(l.slug);
+                              setUrl(l.url);
+                              setDescription(l.description || '');
+                              setIcon(l.icon || 'ExternalLink');
+                              setSortOrder(String(l.sortOrder ?? 0));
+                              setIsActive(l.isActive !== false);
+                            }}
+                            className="p-1.5 rounded-lg text-[#C25B7C] hover:bg-[#FDE8EE]"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(l)}
+                            className="p-1.5 rounded-lg text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </AdminLayout>

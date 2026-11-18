@@ -60,7 +60,7 @@ export function AdminSettingsPage() {
           Memuat pengaturan...
         </div>
       ) : (
-        <form onSubmit={handleSave} className="max-w-2xl rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-6 space-y-5">
+        <form onSubmit={handleSave} className="max-w-2xl rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-6 space-y-5">
           <div>
             <label className="block text-xs font-medium text-[#3F232C] mb-1">
               Allowlist Domain Affiliate (dipisahkan koma)
@@ -69,7 +69,7 @@ export function AdminSettingsPage() {
               type="text"
               value={allowedDomains}
               onChange={(e) => setAllowedDomains(e.target.value)}
-              className="w-full min-h-[42px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs font-mono-tabular focus:outline-none focus:border-[#C25B7C]"
+              className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs font-mono-tabular focus:outline-none focus:border-[#C25B7C]"
             />
             <p className="mt-1 text-[11px] text-[#7D4E5D]">
               Endpoint /go/[slug], Sandbox Link, dan sistem import hanya mengizinkan redirect ke domain pada daftar ini.
@@ -87,7 +87,7 @@ export function AdminSettingsPage() {
                 max="2000"
                 value={importMaxRows}
                 onChange={(e) => setImportMaxRows(e.target.value)}
-                className="w-full min-h-[42px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm tabular-nums"
+                className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm tabular-nums"
               />
             </div>
 
@@ -101,7 +101,7 @@ export function AdminSettingsPage() {
                 max="3650"
                 value={retentionDays}
                 onChange={(e) => setRetentionDays(e.target.value)}
-                className="w-full min-h-[42px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm tabular-nums"
+                className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm tabular-nums"
               />
             </div>
           </div>
@@ -110,7 +110,7 @@ export function AdminSettingsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
+              className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
             >
               <Save className="w-4 h-4" />
               <span>{saving ? 'Menyimpan...' : 'Simpan Pengaturan'}</span>

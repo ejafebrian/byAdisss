@@ -162,8 +162,8 @@ export function AdminBannersPage() {
             <div className="aspect-[16/9] rounded-xl overflow-hidden border border-[#F0C6D2] bg-[#FFF6F8] mb-2">
               <SafeImage src={imageUrl} alt={title || 'Banner'} className="w-full h-full object-cover" />
             </div>
-            <div className="flex items-center gap-2">
-              <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE] text-xs font-medium text-[#3F232C] cursor-pointer">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE] text-xs font-medium text-[#3F232C] cursor-pointer">
                 <Upload className="w-3.5 h-3.5 text-[#C25B7C]" />
                 <span>{uploading ? 'Mengunggah...' : 'Upload'}</span>
                 <input
@@ -178,7 +178,7 @@ export function AdminBannersPage() {
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="Atau URL gambar"
-                className="flex-1 min-h-[38px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
+                className="flex-1 min-w-[160px] min-h-[40px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
               />
             </div>
           </div>
@@ -190,18 +190,18 @@ export function AdminBannersPage() {
               value={targetUrl}
               onChange={(e) => setTargetUrl(e.target.value)}
               placeholder="#catalog atau https://..."
-              className="w-full min-h-[40px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
+              className="w-full min-h-[42px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-[#3F232C] mb-1">Mulai Tayang</label>
               <input
                 type="datetime-local"
                 value={startsAt}
                 onChange={(e) => setStartsAt(e.target.value)}
-                className="w-full min-h-[38px] px-2 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-[11px]"
+                className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
               />
             </div>
             <div>
@@ -210,7 +210,7 @@ export function AdminBannersPage() {
                 type="datetime-local"
                 value={endsAt}
                 onChange={(e) => setEndsAt(e.target.value)}
-                className="w-full min-h-[38px] px-2 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-[11px]"
+                className="w-full min-h-[40px] px-2.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
               />
             </div>
           </div>
@@ -231,21 +231,21 @@ export function AdminBannersPage() {
                 type="number"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
-                className="w-20 min-h-[38px] px-2.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs tabular-nums"
+                className="w-20 min-h-[40px] px-2.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs tabular-nums"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full min-h-[42px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
+            className="w-full min-h-[44px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium"
           >
             {editingId ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             <span>{editingId ? 'Simpan Banner' : 'Tambah Banner'}</span>
           </button>
         </form>
 
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 min-w-0">
           {loading && (
             <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-8 text-center text-xs text-[#7D4E5D]">
               Memuat banner...
@@ -255,7 +255,7 @@ export function AdminBannersPage() {
             items.map((b) => (
               <div
                 key={b.id}
-                className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 flex flex-col sm:flex-row gap-4 items-center"
+                className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center"
               >
                 <div className="w-full sm:w-44 aspect-[16/9] rounded-xl overflow-hidden bg-[#FFF6F8] shrink-0">
                   <SafeImage src={b.imageUrl} alt={b.title} className="w-full h-full object-cover" />
@@ -276,7 +276,7 @@ export function AdminBannersPage() {
                   </h3>
                   {b.description && <p className="text-xs text-[#7D4E5D] mt-0.5">{b.description}</p>}
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center justify-end gap-1 shrink-0">
                   <button
                     type="button"
                     onClick={() => {
@@ -290,14 +290,14 @@ export function AdminBannersPage() {
                       setStartsAt(b.startsAt ? b.startsAt.slice(0, 16) : '');
                       setEndsAt(b.endsAt ? b.endsAt.slice(0, 16) : '');
                     }}
-                    className="p-2 rounded-lg text-[#C25B7C] hover:bg-[#FDE8EE]"
+                    className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-[#C25B7C] hover:bg-[#FDE8EE]"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(b)}
-                    className="p-2 rounded-lg text-red-700 hover:bg-red-50"
+                    className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-red-700 hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

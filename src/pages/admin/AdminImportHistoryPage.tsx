@@ -53,14 +53,94 @@ export function AdminImportHistoryPage() {
         <button
           type="button"
           onClick={() => downloadFile('/api/admin/export/import_history', 'by-adisss-import-history.csv')}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#F0C6D2] bg-[#FFFFFF] text-xs font-medium text-[#3F232C]"
+          className="min-h-[40px] inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl border border-[#F0C6D2] bg-[#FFFFFF] text-xs font-medium text-[#3F232C] whitespace-nowrap"
         >
           <Download className="w-3.5 h-3.5 text-[#C25B7C]" />
-          <span>Export History CSV</span>
+          <span className="hidden sm:inline">Export History CSV</span>
+          <span className="sm:hidden">Export CSV</span>
         </button>
       }
     >
-      <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] overflow-hidden">
+      {/* Mobile & Tablet Card View (< 1024px) */}
+      <div className="lg:hidden space-y-3">
+        {loading && (
+          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-8 text-center text-xs text-[#7D4E5D]">
+            Memuat riwayat import...
+          </div>
+        )}
+
+        {!loading && items.length === 0 && (
+          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-8 text-center text-xs text-[#7D4E5D]">
+            <History className="w-7 h-7 mx-auto mb-2 opacity-50 text-[#C25B7C]" />
+            Belum ada riwayat import produk.
+          </div>
+        )}
+
+        {!loading &&
+          items.map((job) => (
+            <article
+              key={job.id}
+              className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 space-y-3 text-xs"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold text-[#3F232C] truncate">{job.filename}</div>
+                  <div className="text-[11px] text-[#7D4E5D] truncate">{job.adminEmail}</div>
+                </div>
+                <span className="px-2 py-0.5 rounded-md bg-[#FFF6F8] border border-[#F0C6D2] text-[10px] font-semibold uppercase text-[#C25B7C] shrink-0">
+                  {job.importStatus}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#7D4E5D] tabular-nums">
+                <span>{formatJakartaDateTime(job.createdAt)}</span>
+                <span>Mode: {job.duplicateMode}</span>
+              </div>
+
+              <div className="grid grid-cols-5 gap-1.5 rounded-xl bg-[#FFF6F8] border border-[#F0C6D2]/60 p-2 text-center text-[11px] tabular-nums">
+                <div>
+                  <div className="text-[#7D4E5D]">Total</div>
+                  <div className="font-semibold text-[#3F232C]">{job.totalRows}</div>
+                </div>
+                <div>
+                  <div className="text-emerald-800">Ok</div>
+                  <div className="font-semibold text-emerald-700">{job.successRows}</div>
+                </div>
+                <div>
+                  <div className="text-blue-800">Upd</div>
+                  <div className="font-semibold text-blue-700">{job.updatedRows}</div>
+                </div>
+                <div>
+                  <div className="text-amber-800">Skip</div>
+                  <div className="font-semibold text-amber-700">{job.skippedRows}</div>
+                </div>
+                <div>
+                  <div className="text-red-800">Fail</div>
+                  <div className="font-semibold text-red-700">{job.failedRows}</div>
+                </div>
+              </div>
+
+              {job.failedRows > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    downloadFile(
+                      `/api/admin/import/history/${job.id}/errors.csv`,
+                      `import-errors-job-${job.id}.csv`
+                    )
+                  }
+                  className="w-full min-h-[38px] inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50/70 text-red-700 font-medium"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Unduh Error Report (.csv)</span>
+                </button>
+              )}
+            </article>
+          ))}
+      </div>
+
+      {/* Desktop Table (>= 1024px) */}
+      <div className="hidden lg:block rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead className="bg-[#FFF6F8] border-b border-[#F0C6D2] text-[#7D4E5D]">

@@ -1657,8 +1657,8 @@ export function registerRoutes(app: express.Express) {
       if (req.admin && req.admin.id === id) {
         return res.status(400).json({ error: 'Tidak dapat menghapus akun yang sedang aktif digunakan.' });
       }
-      await db.delete(admins).where(eq(admins.id, id));
-      return res.json({ deleted: true });
+      const [deletedRow] = await db.delete(admins).where(eq(admins.id, id)).returning();
+      return res.json({ deleted: true, account: deletedRow || null });
     }
   );
 

@@ -202,36 +202,25 @@ export function AdminCategoriesPage() {
           </button>
         </form>
 
-        <div className="lg:col-span-2 rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] overflow-hidden">
-          <table className="w-full text-xs">
-            <thead className="bg-[#FFF6F8] border-b border-[#F0C6D2] text-[#7D4E5D]">
-              <tr>
-                <th className="p-3 text-left">Nama</th>
-                <th className="p-3 text-left">Slug</th>
-                <th className="p-3 text-right">Produk</th>
-                <th className="p-3 text-right">Urutan</th>
-                <th className="p-3 text-center">Status</th>
-                <th className="p-3 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F0C6D2]/60">
-              {loading && (
-                <tr>
-                  <td colSpan={6} className="p-6 text-center text-[#7D4E5D]">
-                    Memuat kategori...
-                  </td>
-                </tr>
-              )}
-              {!loading &&
-                items.map((c) => (
-                  <tr key={c.id} className="hover:bg-[#FFF6F8]/70">
-                    <td className="p-3 font-semibold text-[#3F232C]">{c.name}</td>
-                    <td className="p-3 font-mono-tabular text-[#C25B7C]">{c.slug}</td>
-                    <td className="p-3 text-right tabular-nums">{c.productCount ?? 0}</td>
-                    <td className="p-3 text-right tabular-nums">{c.sortOrder}</td>
-                    <td className="p-3 text-center">
+        <div className="lg:col-span-2 min-w-0 space-y-3">
+          {/* Mobile Card View (< 768px) */}
+          <div className="md:hidden space-y-3">
+            {loading && (
+              <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-6 text-center text-xs text-[#7D4E5D]">
+                Memuat kategori...
+              </div>
+            )}
+            {!loading &&
+              items.map((c) => (
+                <div
+                  key={c.id}
+                  className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 flex items-center justify-between gap-3"
+                >
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm text-[#3F232C] truncate">{c.name}</span>
                       <span
-                        className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                        className={`px-2 py-0.5 rounded text-[10px] font-medium shrink-0 ${
                           c.isActive
                             ? 'bg-emerald-50 text-emerald-800'
                             : 'bg-amber-50 text-amber-800'
@@ -239,27 +228,94 @@ export function AdminCategoriesPage() {
                       >
                         {c.isActive ? 'Aktif' : 'Nonaktif'}
                       </span>
-                    </td>
-                    <td className="p-3 text-right whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(c)}
-                        className="p-1.5 rounded-lg text-[#C25B7C] hover:bg-[#FDE8EE]"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(c)}
-                        className="p-1.5 rounded-lg text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
+                    </div>
+                    <div className="text-[11px] font-mono-tabular text-[#C25B7C] truncate">{c.slug}</div>
+                    <div className="text-[11px] text-[#7D4E5D] tabular-nums">
+                      {c.productCount ?? 0} produk · Urutan #{c.sortOrder}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => startEdit(c)}
+                      className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-[#C25B7C] hover:bg-[#FDE8EE]"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(c)}
+                      className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+
+          {/* Tablet & Desktop Table (>= 768px) */}
+          <div className="hidden md:block rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-[#FFF6F8] border-b border-[#F0C6D2] text-[#7D4E5D]">
+                  <tr>
+                    <th className="p-3 text-left">Nama</th>
+                    <th className="p-3 text-left">Slug</th>
+                    <th className="p-3 text-right">Produk</th>
+                    <th className="p-3 text-right">Urutan</th>
+                    <th className="p-3 text-center">Status</th>
+                    <th className="p-3 text-right">Aksi</th>
                   </tr>
-                ))}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-[#F0C6D2]/60">
+                  {loading && (
+                    <tr>
+                      <td colSpan={6} className="p-6 text-center text-[#7D4E5D]">
+                        Memuat kategori...
+                      </td>
+                    </tr>
+                  )}
+                  {!loading &&
+                    items.map((c) => (
+                      <tr key={c.id} className="hover:bg-[#FFF6F8]/70">
+                        <td className="p-3 font-semibold text-[#3F232C]">{c.name}</td>
+                        <td className="p-3 font-mono-tabular text-[#C25B7C]">{c.slug}</td>
+                        <td className="p-3 text-right tabular-nums">{c.productCount ?? 0}</td>
+                        <td className="p-3 text-right tabular-nums">{c.sortOrder}</td>
+                        <td className="p-3 text-center">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                              c.isActive
+                                ? 'bg-emerald-50 text-emerald-800'
+                                : 'bg-amber-50 text-amber-800'
+                            }`}
+                          >
+                            {c.isActive ? 'Aktif' : 'Nonaktif'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(c)}
+                            className="p-1.5 rounded-lg text-[#C25B7C] hover:bg-[#FDE8EE]"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(c)}
+                            className="p-1.5 rounded-lg text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </AdminLayout>

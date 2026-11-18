@@ -238,15 +238,15 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
     >
       <div className="space-y-6">
         {/* Filter & Export Bar */}
-        <section className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Calendar className="w-4 h-4 text-[#C25B7C] mr-1" />
+        <section className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-3.5 sm:p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+            <Calendar className="w-4 h-4 text-[#C25B7C] mr-1 shrink-0" />
             {PRESETS.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => setPreset(p.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                className={`min-h-[36px] px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                   preset === p.id
                     ? 'bg-[#C25B7C] text-[#FFFFFF]'
                     : 'bg-[#FFF6F8] text-[#7D4E5D] hover:text-[#3F232C] border border-[#F0C6D2]/70'
@@ -257,48 +257,48 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
             ))}
 
             {preset === 'custom' && (
-              <div className="flex items-center gap-2 ml-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto pt-1 sm:pt-0 sm:ml-1">
                 <input
                   type="date"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
+                  className="flex-1 sm:flex-none min-h-[38px] px-2.5 py-1.5 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
                 />
                 <span className="text-xs text-[#7D4E5D]">s/d</span>
                 <input
                   type="date"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
-                  className="px-2.5 py-1.5 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
+                  className="flex-1 sm:flex-none min-h-[38px] px-2.5 py-1.5 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
                 />
               </div>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => handleExport('analytics_daily')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE]/70 text-xs font-medium text-[#3F232C] whitespace-nowrap"
+              className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE]/70 text-[11px] sm:text-xs font-medium text-[#3F232C] whitespace-nowrap"
             >
-              <Download className="w-3.5 h-3.5 text-[#C25B7C]" />
-              <span>Export Harian</span>
+              <Download className="w-3.5 h-3.5 text-[#C25B7C] shrink-0" />
+              <span className="truncate">Harian</span>
             </button>
             <button
               type="button"
               onClick={() => handleExport('product_clicks')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE]/70 text-xs font-medium text-[#3F232C] whitespace-nowrap"
+              className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE]/70 text-[11px] sm:text-xs font-medium text-[#3F232C] whitespace-nowrap"
             >
-              <Download className="w-3.5 h-3.5 text-[#C25B7C]" />
-              <span>Export Klik</span>
+              <Download className="w-3.5 h-3.5 text-[#C25B7C] shrink-0" />
+              <span className="truncate">Klik</span>
             </button>
             <button
               type="button"
               onClick={() => handleExport('page_views')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE]/70 text-xs font-medium text-[#3F232C] whitespace-nowrap"
+              className="min-h-[38px] inline-flex items-center justify-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE]/70 text-[11px] sm:text-xs font-medium text-[#3F232C] whitespace-nowrap"
             >
-              <Download className="w-3.5 h-3.5 text-[#C25B7C]" />
-              <span>Export Views</span>
+              <Download className="w-3.5 h-3.5 text-[#C25B7C] shrink-0" />
+              <span className="truncate">Views</span>
             </button>
           </div>
         </section>
@@ -310,7 +310,7 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
         )}
 
         {/* KPI Cards */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
             {
               label: 'Total Page Views',
@@ -373,20 +373,20 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
             return (
               <div
                 key={card.label}
-                className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 flex flex-col justify-between"
+                className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-3.5 sm:p-4 flex flex-col justify-between min-w-0"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-[#7D4E5D]">{card.label}</span>
+                  <span className="text-[11px] sm:text-xs font-medium text-[#7D4E5D] truncate">{card.label}</span>
                   <Icon className="w-4 h-4 text-[#C25B7C] shrink-0" />
                 </div>
 
                 <div className="mt-2 flex items-baseline justify-between gap-2">
-                  <div className="text-2xl font-semibold text-[#3F232C] tabular-nums">
+                  <div className="text-xl sm:text-2xl font-semibold text-[#3F232C] tabular-nums truncate">
                     {loading ? '—' : card.value}
                   </div>
                   {card.delta !== null && card.delta !== undefined && (
                     <span
-                      className={`text-[11px] font-medium tabular-nums ${
+                      className={`text-[11px] font-medium tabular-nums shrink-0 ${
                         card.delta >= 0 ? 'text-emerald-700' : 'text-red-700'
                       }`}
                     >
@@ -395,26 +395,26 @@ export function AdminDashboardPage({ isAnalyticsView = false }: { isAnalyticsVie
                   )}
                 </div>
 
-                <div className="mt-1.5 text-[11px] text-[#7D4E5D]/85">{card.hint}</div>
+                <div className="mt-1.5 text-[10px] sm:text-[11px] text-[#7D4E5D]/85 leading-snug">{card.hint}</div>
               </div>
             );
           })}
         </section>
 
         {/* Daily Trend Chart & Live Activity */}
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Chart */}
-          <div className="lg:col-span-2 rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-serif-display text-lg font-semibold text-[#3F232C]">
+          <div className="lg:col-span-2 rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-5 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+              <div className="min-w-0">
+                <h2 className="font-serif-display text-base sm:text-lg font-semibold text-[#3F232C]">
                   Performa Harian (Views & Clicks)
                 </h2>
                 <p className="text-xs text-[#7D4E5D]">
                   Pengelompokan tanggal berdasarkan Asia/Jakarta ({data?.range.label || 'Last 7 Days'})
                 </p>
               </div>
-              <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-4 text-xs shrink-0">
                 <span className="flex items-center gap-1.5 text-[#7D4E5D]">
                   <span className="w-2.5 h-2.5 rounded-xs bg-[#F0C6D2]" />
                   Page Views

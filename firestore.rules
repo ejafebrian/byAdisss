@@ -23,7 +23,22 @@ service cloud.firestore {
     }
 
     function isOwnerBootstrapAdmin() {
-      return isSignedIn() && request.auth.token.email == 'ejafebriansyah3@gmail.com';
+      return isSignedIn() && request.auth.token.email.lower() == 'ejafebriansyah3@gmail.com';
+    }
+
+    function callerInviteId() {
+      return request.auth.token.email.lower().replace('[^a-z0-9]', '_');
+    }
+
+    function hasValidAdminInvite(targetRole) {
+      return isSignedIn() &&
+        request.auth.token.email is string &&
+        isValidId(callerInviteId()) &&
+        exists(/databases/$(database)/documents/admin_invites/$(callerInviteId())) &&
+        get(/databases/$(database)/documents/admin_invites/$(callerInviteId())).data.isActive == true &&
+        get(/databases/$(database)/documents/admin_invites/$(callerInviteId())).data.isAdmin == true &&
+        get(/databases/$(database)/documents/admin_invites/$(callerInviteId())).data.email.lower() == request.auth.token.email.lower() &&
+        get(/databases/$(database)/documents/admin_invites/$(callerInviteId())).data.role == targetRole;
     }
 
     function hasAdminDoc(uid) {
@@ -106,6 +121,28 @@ service cloud.firestore {
         data.updatedAt is timestamp;
     }
 
+    function isValidAdminInvite(data, inviteId) {
+      return data.keys().hasAll(['email', 'displayName', 'role', 'isAdmin', 'isActive', 'createdByUid', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['email', 'displayName', 'role', 'isAdmin', 'isActive', 'createdByUid', 'createdAt', 'updatedAt']) &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 254 &&
+        data.email.lower().replace('[^a-z0-9]', '_') == inviteId &&
+        data.displayName is string &&
+        data.displayName.size() >= 1 &&
+        data.displayName.size() <= 120 &&
+        data.role is string &&
+        data.role in ['super_admin', 'admin', 'editor'] &&
+        data.isAdmin == true &&
+        data.isActive is bool &&
+        data.createdByUid is string &&
+        data.createdByUid.size() >= 1 &&
+        data.createdByUid.size() <= 128 &&
+        data.createdByUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
     match /users/{userId} {
       allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || isAdmin());
       allow list: if isSignedIn() && (isOwnerBootstrapAdmin() || existing().uid == request.auth.uid);
@@ -120,6 +157,13 @@ service cloud.firestore {
             incoming().role == 'user' &&
             incoming().isAdmin == false &&
             incoming().isActive == true
+          ) ||
+          (
+            request.auth.uid == userId &&
+            incoming().isAdmin == true &&
+            incoming().isActive == true &&
+            incoming().role in ['super_admin', 'admin', 'editor'] &&
+            hasValidAdminInvite(incoming().role)
           )
         );
       allow update: if isSignedIn() &&
@@ -130,6 +174,14 @@ service cloud.firestore {
         incoming().updatedAt == request.time && (
           (
             isSuperAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'role', 'isAdmin', 'isActive', 'updatedAt'])
+          ) ||
+          (
+            request.auth.uid == userId &&
+            incoming().isAdmin == true &&
+            incoming().isActive == true &&
+            incoming().role in ['super_admin', 'admin', 'editor'] &&
+            hasValidAdminInvite(incoming().role) &&
             incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'role', 'isAdmin', 'isActive', 'updatedAt'])
           ) ||
           (
@@ -150,17 +202,57 @@ service cloud.firestore {
         isValidId(adminUid) &&
         isValidAdminRecord(incoming(), adminUid) &&
         incoming().createdAt == request.time &&
-        incoming().updatedAt == request.time &&
-        isSuperAdmin();
+        incoming().updatedAt == request.time && (
+          isSuperAdmin() ||
+          (
+            request.auth.uid == adminUid &&
+            incoming().isActive == true &&
+            hasValidAdminInvite(incoming().role)
+          )
+        );
       allow update: if isSignedIn() &&
         isValidId(adminUid) &&
         isValidAdminRecord(incoming(), adminUid) &&
-        isSuperAdmin() &&
         incoming().uid == existing().uid &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
-        incoming().diff(existing()).affectedKeys().hasOnly(['email', 'role', 'isAdmin', 'isActive', 'updatedAt']);
+        incoming().diff(existing()).affectedKeys().hasOnly(['email', 'role', 'isAdmin', 'isActive', 'updatedAt']) && (
+          isSuperAdmin() ||
+          (
+            request.auth.uid == adminUid &&
+            incoming().isActive == true &&
+            hasValidAdminInvite(incoming().role)
+          )
+        );
       allow delete: if isSignedIn() && isValidId(adminUid) && isSuperAdmin() && adminUid != request.auth.uid;
+    }
+
+    match /admin_invites/{inviteId} {
+      allow get: if isSignedIn() && isValidId(inviteId) && (
+        isAdmin() ||
+        resource == null ||
+        existing().email.lower() == request.auth.token.email.lower()
+      );
+      allow list: if isSignedIn() && (
+        isOwnerBootstrapAdmin() ||
+        existing().email.lower() == request.auth.token.email.lower()
+      );
+      allow create: if isSignedIn() &&
+        isSuperAdmin() &&
+        isValidId(inviteId) &&
+        isValidAdminInvite(incoming(), inviteId) &&
+        incoming().createdByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isSignedIn() &&
+        isSuperAdmin() &&
+        isValidId(inviteId) &&
+        isValidAdminInvite(incoming(), inviteId) &&
+        incoming().createdByUid == existing().createdByUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'role', 'isAdmin', 'isActive', 'updatedAt']);
+      allow delete: if isSignedIn() && isSuperAdmin() && isValidId(inviteId);
     }
   }
 }

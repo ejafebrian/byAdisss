@@ -178,7 +178,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
       actions={
         <Link
           to="/admin/products"
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#F0C6D2] bg-[#FFFFFF] text-xs font-medium text-[#3F232C]"
+          className="min-h-[40px] inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#F0C6D2] bg-[#FFFFFF] text-xs font-medium text-[#3F232C]"
         >
           <ArrowLeft className="w-3.5 h-3.5 text-[#C25B7C]" />
           <span>Kembali</span>
@@ -190,8 +190,8 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
           Memuat detail produk...
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
-          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="max-w-3xl space-y-5 sm:space-y-6">
+          <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-6 space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-[#3F232C] mb-1.5">
@@ -208,7 +208,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                     }
                   }}
                   placeholder="Contoh: Rosehip Radiance Serum 30ml"
-                  className="w-full min-h-[42px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm focus:outline-none focus:border-[#C25B7C]"
+                  className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm focus:outline-none focus:border-[#C25B7C]"
                 />
               </div>
 
@@ -224,13 +224,13 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                     setProductSlug(slugifyClient(e.target.value));
                   }}
                   placeholder="rosehip-radiance-serum"
-                  className="w-full min-h-[42px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm font-mono-tabular focus:outline-none focus:border-[#C25B7C]"
+                  className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm font-mono-tabular focus:outline-none focus:border-[#C25B7C]"
                 />
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between gap-2 mb-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                 <label className="block text-xs font-medium text-[#3F232C]">
                   Shopee Affiliate URL *
                 </label>
@@ -253,7 +253,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                   setSandboxStatus(null);
                 }}
                 placeholder="https://shopee.co.id/... atau https://s.shopee.co.id/..."
-                className="w-full min-h-[42px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm focus:outline-none focus:border-[#C25B7C]"
+                className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm focus:outline-none focus:border-[#C25B7C]"
               />
               {sandboxStatus && (
                 <div
@@ -282,7 +282,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                 <select
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full min-h-[42px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
                 >
                   <option value="">Tanpa Kategori</option>
                   {categories.map((c) => (
@@ -304,7 +304,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="129000"
-                  className="w-full min-h-[42px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm tabular-nums"
+                  className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm tabular-nums"
                 />
               </div>
 
@@ -315,7 +315,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                 <select
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
-                  className="w-full min-h-[42px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
+                  className="w-full min-h-[44px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm"
                 >
                   <option value="">Tanpa Label</option>
                   <option value="BEST SELLER">BEST SELLER</option>
@@ -341,7 +341,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
 
             {/* Image Upload or URL */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-              <div className="aspect-[4/3] rounded-xl overflow-hidden border border-[#F0C6D2] bg-[#FFF6F8]">
+              <div className="aspect-[4/3] max-w-[260px] md:max-w-none rounded-xl overflow-hidden border border-[#F0C6D2] bg-[#FFF6F8]">
                 <SafeImage
                   src={imageUrl}
                   alt={productName || 'Preview Produk'}
@@ -354,7 +354,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                   <label className="block text-xs font-medium text-[#3F232C] mb-1.5">
                     Upload Foto Produk (JPEG/PNG/WEBP, maks 2MB)
                   </label>
-                  <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE] text-xs font-medium text-[#3F232C] cursor-pointer">
+                  <label className="min-h-[44px] inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE] text-xs font-medium text-[#3F232C] cursor-pointer">
                     <Upload className="w-4 h-4 text-[#C25B7C]" />
                     <span>{uploading ? 'Mengunggah...' : 'Pilih File Gambar'}</span>
                     <input
@@ -376,15 +376,15 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
                     placeholder="https://..."
-                    className="w-full min-h-[40px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
+                    className="w-full min-h-[42px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs"
                   />
                 </div>
               </div>
             </div>
 
             {/* Toggles & Sort Order */}
-            <div className="pt-2 border-t border-[#F0C6D2]/70 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-[#3F232C]">
+            <div className="pt-3 border-t border-[#F0C6D2]/70 grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+              <label className="min-h-[36px] flex items-center gap-2.5 cursor-pointer text-xs font-medium text-[#3F232C]">
                 <input
                   type="checkbox"
                   checked={isActive}
@@ -394,7 +394,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                 <span>Produk Aktif (Tampil di Katalog)</span>
               </label>
 
-              <label className="flex items-center gap-2.5 cursor-pointer text-xs font-medium text-[#3F232C]">
+              <label className="min-h-[36px] flex items-center gap-2.5 cursor-pointer text-xs font-medium text-[#3F232C]">
                 <input
                   type="checkbox"
                   checked={isFeatured}
@@ -411,23 +411,23 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                   min="0"
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
-                  className="w-full min-h-[38px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs tabular-nums"
+                  className="w-full min-h-[40px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs tabular-nums"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3">
             <Link
               to="/admin/products"
-              className="px-4 py-2.5 rounded-xl border border-[#F0C6D2] bg-[#FFFFFF] text-xs font-medium text-[#3F232C]"
+              className="min-h-[44px] inline-flex items-center justify-center px-4 py-2.5 rounded-xl border border-[#F0C6D2] bg-[#FFFFFF] text-xs font-medium text-[#3F232C]"
             >
               Batal
             </Link>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] disabled:opacity-60 text-white text-xs font-medium"
+              className="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] disabled:opacity-60 text-white text-xs font-medium"
             >
               <Save className="w-4 h-4" />
               <span>{saving ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Tambahkan Produk'}</span>

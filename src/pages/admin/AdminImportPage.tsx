@@ -223,17 +223,18 @@ export function AdminImportPage() {
         <button
           type="button"
           onClick={handleDownloadTemplate}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#F0C6D2] bg-[#FFFFFF] hover:bg-[#FFF6F8] text-xs font-medium text-[#3F232C] whitespace-nowrap"
+          className="min-h-[40px] inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl border border-[#F0C6D2] bg-[#FFFFFF] hover:bg-[#FFF6F8] text-xs font-medium text-[#3F232C] whitespace-nowrap"
         >
           <Download className="w-4 h-4 text-[#C25B7C]" />
-          <span>Download Template (.xlsx)</span>
+          <span className="hidden sm:inline">Download Template (.xlsx)</span>
+          <span className="sm:hidden">Template</span>
         </button>
       }
     >
       <div className="space-y-6">
         {/* Source Selector & Upload Card */}
         {!result && (
-          <section className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-6 space-y-5">
+          <section className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-6 space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="font-serif-display text-lg font-semibold text-[#3F232C]">
@@ -245,11 +246,11 @@ export function AdminImportPage() {
                 </p>
               </div>
 
-              <div className="inline-flex p-1 rounded-xl bg-[#FFF6F8] border border-[#F0C6D2] self-start">
+              <div className="grid grid-cols-2 sm:inline-flex p-1 rounded-xl bg-[#FFF6F8] border border-[#F0C6D2] w-full sm:w-auto self-start">
                 <button
                   type="button"
                   onClick={() => setSourceMode('google_sheet')}
-                  className={`px-3.5 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                  className={`min-h-[38px] px-3.5 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                     sourceMode === 'google_sheet'
                       ? 'bg-[#C25B7C] text-white'
                       : 'text-[#7D4E5D] hover:text-[#3F232C]'
@@ -260,7 +261,7 @@ export function AdminImportPage() {
                 <button
                   type="button"
                   onClick={() => setSourceMode('file')}
-                  className={`px-3.5 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                  className={`min-h-[38px] px-3.5 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                     sourceMode === 'file'
                       ? 'bg-[#C25B7C] text-white'
                       : 'text-[#7D4E5D] hover:text-[#3F232C]'
@@ -288,7 +289,7 @@ export function AdminImportPage() {
                   <button
                     type="submit"
                     disabled={uploadingPreview || executing}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] disabled:opacity-60 text-white text-xs font-medium whitespace-nowrap"
+                    className="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] disabled:opacity-60 text-white text-xs font-medium whitespace-nowrap"
                   >
                     <FileSpreadsheet className="w-4 h-4" />
                     <span>
@@ -297,7 +298,7 @@ export function AdminImportPage() {
                   </button>
                 </div>
 
-                <div className="rounded-xl bg-[#FFF6F8] border border-[#F0C6D2]/80 p-4 space-y-2.5 text-xs text-[#7D4E5D]">
+                <div className="rounded-xl bg-[#FFF6F8] border border-[#F0C6D2]/80 p-3.5 sm:p-4 space-y-2.5 text-xs text-[#7D4E5D]">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-semibold text-[#3F232C]">
                       Panduan Singkat Google Sheet:
@@ -305,7 +306,7 @@ export function AdminImportPage() {
                     <button
                       type="button"
                       onClick={handleCopyHeaders}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FFFFFF] border border-[#F0C6D2] text-[11px] font-medium text-[#C25B7C] hover:bg-[#FDE8EE]"
+                      className="min-h-[34px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#FFFFFF] border border-[#F0C6D2] text-[11px] font-medium text-[#C25B7C] hover:bg-[#FDE8EE]"
                     >
                       <Copy className="w-3 h-3" />
                       <span>Salin Header Kolom</span>
@@ -320,12 +321,12 @@ export function AdminImportPage() {
                 </div>
               </form>
             ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl bg-[#FFF6F8] border border-dashed border-[#F0C6D2] p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl bg-[#FFF6F8] border border-dashed border-[#F0C6D2] p-4 sm:p-5">
                 <div className="text-xs text-[#7D4E5D] space-y-1">
                   <div className="font-semibold text-[#3F232C]">Unggah File Spreadsheet Lokal</div>
                   <p>Mendukung format .xlsx, .xls, dan .csv maksimal 5MB (hingga 500 baris).</p>
                 </div>
-                <label className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium cursor-pointer whitespace-nowrap">
+                <label className="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] text-white text-xs font-medium cursor-pointer whitespace-nowrap">
                   <Upload className="w-4 h-4" />
                   <span>{uploadingPreview ? 'Membaca & Memvalidasi...' : 'Pilih File (.xlsx / .xls / .csv)'}</span>
                   <input
@@ -349,10 +350,10 @@ export function AdminImportPage() {
         {preview && !result && (
           <section className="space-y-5">
             {/* Duplicate Mode & Pre-Import Summary */}
-            <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-6 space-y-5">
+            <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-6 space-y-5">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div>
-                  <h2 className="font-serif-display text-lg font-semibold text-[#3F232C]">
+                <div className="min-w-0">
+                  <h2 className="font-serif-display text-lg font-semibold text-[#3F232C] truncate">
                     2. Preview Validasi: {preview.filename}
                   </h2>
                   <p className="text-xs text-[#7D4E5D] mt-0.5 tabular-nums">
@@ -371,7 +372,7 @@ export function AdminImportPage() {
                       key={m.id}
                       type="button"
                       onClick={() => setDuplicateMode(m.id as 'skip' | 'update' | 'new_only')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                      className={`min-h-[36px] px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                         duplicateMode === m.id
                           ? 'bg-[#C25B7C] text-white border-[#C25B7C]'
                           : 'bg-[#FFF6F8] text-[#7D4E5D] border-[#F0C6D2]'
@@ -426,11 +427,11 @@ export function AdminImportPage() {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setPreview(null)}
-                  className="px-4 py-2.5 rounded-xl border border-[#F0C6D2] text-xs font-medium text-[#3F232C]"
+                  className="min-h-[44px] px-4 py-2.5 rounded-xl border border-[#F0C6D2] text-xs font-medium text-[#3F232C]"
                 >
                   Reset / Ganti Sumber
                 </button>
@@ -438,15 +439,62 @@ export function AdminImportPage() {
                   type="button"
                   disabled={executing || summary.toAdd + summary.toUpdate === 0}
                   onClick={() => handleRunImport()}
-                  className="px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] disabled:opacity-50 text-white text-xs font-medium"
+                  className="min-h-[44px] px-5 py-2.5 rounded-xl bg-[#C25B7C] hover:bg-[#A84867] disabled:opacity-50 text-white text-xs font-medium"
                 >
                   {executing ? 'Mengimpor...' : 'Jalankan Import Sekarang'}
                 </button>
               </div>
             </div>
 
-            {/* Preview Table */}
-            <div className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] overflow-hidden">
+            {/* Mobile Preview Cards (< 768px) */}
+            <div className="md:hidden space-y-2.5 max-h-[540px] overflow-y-auto pr-0.5">
+              {preview.rows.map((r) => (
+                <div key={r.rowNumber} className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-3.5 space-y-2 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono-tabular text-[11px] text-[#7D4E5D]">Baris #{r.rowNumber}</span>
+                    {r.validationStatus === 'valid' && (
+                      <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Valid
+                      </span>
+                    )}
+                    {r.validationStatus === 'warning' && (
+                      <span className="inline-flex items-center gap-1 text-amber-700 font-medium">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        Warning
+                      </span>
+                    )}
+                    {r.validationStatus === 'error' && (
+                      <span className="inline-flex items-center gap-1 text-red-700 font-medium">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        Error
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-semibold text-[#3F232C]">
+                    {r.productName || <span className="text-red-700 italic">(Kosong)</span>}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#7D4E5D]">
+                    <span className="font-mono-tabular text-[#C25B7C]">{r.productSlug || '—'}</span>
+                    {r.categoryName && <span>• {r.categoryName}</span>}
+                    {r.price !== null && <span className="tabular-nums font-medium text-[#3F232C]">• {formatIdr(r.price)}</span>}
+                  </div>
+                  {(r.errors.length > 0 || r.warnings.length > 0) && (
+                    <div className="pt-1 border-t border-[#F0C6D2]/60 space-y-0.5 text-[11px]">
+                      {r.errors.map((e, i) => (
+                        <div key={i} className="text-red-700">• {e}</div>
+                      ))}
+                      {r.warnings.map((w, i) => (
+                        <div key={i} className="text-amber-700">• {w}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Preview Table (>= 768px) */}
+            <div className="hidden md:block rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] overflow-hidden">
               <div className="overflow-x-auto max-h-[480px]">
                 <table className="w-full text-xs">
                   <thead className="bg-[#FFF6F8] border-b border-[#F0C6D2] text-[#7D4E5D] sticky top-0">
