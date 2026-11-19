@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, Database, Save } from 'lucide-react';
+import { ArrowRight, Database, Plus, Save } from 'lucide-react';
 import { useAuth } from '../../lib/authContext';
 import { Link } from '../../lib/router';
+import {
+  DEFAULT_ALLOWED_AFFILIATE_DOMAINS,
+  TIKTOK_ALLOWED_AFFILIATE_DOMAINS,
+} from '../../lib/validators';
 import { useUiFeedback } from '../../components/Toast';
 import { AdminLayout } from './AdminLayout';
 
@@ -20,13 +24,30 @@ export function AdminSettingsPage() {
       .then((r) => r.json())
       .then((d) => {
         const s = d.settings || {};
-        setAllowedDomains(s.allowed_affiliate_domains || 'shopee.co.id,shope.ee,s.shopee.co.id,shp.ee,shopee.com');
+        setAllowedDomains(s.allowed_affiliate_domains || DEFAULT_ALLOWED_AFFILIATE_DOMAINS.join(','));
         setImportMaxRows(s.import_max_rows || '500');
         setRetentionDays(s.analytics_retention_days || '365');
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [authFetch]);
+
+  const parsedDomainList = allowedDomains
+    .split(',')
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
+  const missingTikTokDomains = TIKTOK_ALLOWED_AFFILIATE_DOMAINS.filter(
+    (d) => !parsedDomainList.includes(d)
+  );
+
+  const handleAppendTikTokDomains = () => {
+    const merged = Array.from(new Set([...parsedDomainList, ...TIKTOK_ALLOWED_AFFILIATE_DOMAINS]));
+    setAllowedDomains(merged.join(','));
+  };
+
+  const handleResetDefaultDomains = () => {
+    setAllowedDomains(DEFAULT_ALLOWED_AFFILIATE_DOMAINS.join(','));
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,9 +85,30 @@ export function AdminSettingsPage() {
         <div className="max-w-2xl space-y-6">
           <form onSubmit={handleSave} className="rounded-2xl bg-[#FFFFFF] border border-[#F0C6D2] p-4 sm:p-6 space-y-5">
             <div>
-              <label className="block text-xs font-medium text-[#3F232C] mb-1">
-                Allowlist Domain Affiliate (dipisahkan koma)
-              </label>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                <label className="block text-xs font-medium text-[#3F232C]">
+                  Allowlist Domain Affiliate (dipisahkan koma)
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {missingTikTokDomains.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleAppendTikTokDomains}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FDE8EE] hover:bg-[#F9D6E0] text-[#C25B7C] text-[11px] font-medium transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Tambahkan Domain TikTok</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleResetDefaultDomains}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#F0C6D2] bg-[#FFF6F8] hover:bg-[#FDE8EE]/50 text-[#7D4E5D] text-[11px] font-medium transition-colors"
+                  >
+                    Reset Default Shopee & TikTok
+                  </button>
+                </div>
+              </div>
               <input
                 type="text"
                 value={allowedDomains}
@@ -74,7 +116,7 @@ export function AdminSettingsPage() {
                 className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs font-mono-tabular focus:outline-none focus:border-[#C25B7C]"
               />
               <p className="mt-1 text-[11px] text-[#7D4E5D]">
-                Endpoint /go/[slug], Sandbox Link, dan sistem import hanya mengizinkan redirect ke domain pada daftar ini.
+                Endpoint /go/[slug], Sandbox Link, dan sistem import hanya mengizinkan redirect ke domain pada daftar ini (mendukung Shopee & TikTok).
               </p>
             </div>
 

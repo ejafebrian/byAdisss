@@ -368,7 +368,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                 <label className="block text-xs font-medium text-[#3F232C]">
-                  Shopee Affiliate URL *
+                  Affiliate URL (Shopee / TikTok) *
                 </label>
                 <button
                   type="button"
@@ -388,7 +388,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                   setAffiliateUrl(e.target.value);
                   setSandboxStatus(null);
                 }}
-                placeholder="https://shopee.co.id/... atau https://s.shopee.co.id/..."
+                placeholder="https://shopee.co.id/... atau https://vt.tiktok.com/..."
                 className="w-full min-h-[44px] px-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-sm focus:outline-none focus:border-[#C25B7C]"
               />
               {sandboxStatus && (
@@ -406,7 +406,7 @@ export function AdminProductFormPage({ productId }: { productId?: number }) {
                 </div>
               )}
               <p className="mt-1 text-[11px] text-[#7D4E5D]">
-                Harus menggunakan HTTPS/HTTP dan berasal dari domain Shopee yang diizinkan pada Website Settings.
+                Harus menggunakan HTTPS/HTTP dan berasal dari domain Shopee atau TikTok yang diizinkan pada Website Settings.
               </p>
             </div>
 

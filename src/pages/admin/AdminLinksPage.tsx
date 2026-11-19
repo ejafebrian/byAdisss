@@ -136,7 +136,7 @@ export function AdminLinksPage() {
               required
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://shopee.co.id/..."
+              placeholder="https://shopee.co.id/... atau https://vt.tiktok.com/..."
               className="w-full min-h-[40px] px-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs focus:outline-none focus:border-[#C25B7C]"
             />
           </div>

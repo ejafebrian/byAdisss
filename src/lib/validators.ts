@@ -1,11 +1,21 @@
 import { z } from 'zod';
 
+export const TIKTOK_ALLOWED_AFFILIATE_DOMAINS = [
+  'tiktok.com',
+  'vt.tiktok.com',
+  'vm.tiktok.com',
+  'shop.tiktok.com',
+  'tiktok.onelink.me',
+  'tiktokv.com',
+];
+
 export const DEFAULT_ALLOWED_AFFILIATE_DOMAINS = [
   'shopee.co.id',
   'shope.ee',
   's.shopee.co.id',
   'shp.ee',
   'shopee.com',
+  ...TIKTOK_ALLOWED_AFFILIATE_DOMAINS,
 ];
 
 export function toSlug(input: string): string {

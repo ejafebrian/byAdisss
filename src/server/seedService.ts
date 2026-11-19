@@ -1,4 +1,4 @@
-import { count } from 'drizzle-orm';
+import { count, inArray } from 'drizzle-orm';
 import { db, pool } from '../db/index.ts';
 import {
   banners,
@@ -8,7 +8,10 @@ import {
   profiles,
   settings,
 } from '../db/schema.ts';
-import { DEFAULT_ALLOWED_AFFILIATE_DOMAINS } from '../lib/validators.ts';
+import {
+  DEFAULT_ALLOWED_AFFILIATE_DOMAINS,
+  TIKTOK_ALLOWED_AFFILIATE_DOMAINS,
+} from '../lib/validators.ts';
 
 let schemaPromise: Promise<void> | null = null;
 let seedPromise: Promise<void> | null = null;
@@ -95,7 +98,54 @@ export async function ensureInitialData(forceRecheck = false): Promise<void> {
   return seedPromise;
 }
 
+async function ensureTikTokDomainsInSettings(): Promise<void> {
+  const rows = await db
+    .select()
+    .from(settings)
+    .where(inArray(settings.settingKey, ['allowed_affiliate_domains', 'tiktok_domains_migrated']));
+
+  const map = new Map(rows.map((r) => [r.settingKey, r.settingValue]));
+  if (map.get('tiktok_domains_migrated') === 'true') {
+    return;
+  }
+
+  const currentRaw = map.get('allowed_affiliate_domains') || '';
+  const currentList = currentRaw
+    .split(',')
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
+
+  const baseList = currentList.length > 0 ? currentList : DEFAULT_ALLOWED_AFFILIATE_DOMAINS;
+  const merged = Array.from(new Set([...baseList, ...TIKTOK_ALLOWED_AFFILIATE_DOMAINS]));
+
+  await db
+    .insert(settings)
+    .values({
+      settingKey: 'allowed_affiliate_domains',
+      settingValue: merged.join(','),
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: settings.settingKey,
+      set: { settingValue: merged.join(','), updatedAt: new Date() },
+    });
+
+  await db
+    .insert(settings)
+    .values({
+      settingKey: 'tiktok_domains_migrated',
+      settingValue: 'true',
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: settings.settingKey,
+      set: { settingValue: 'true', updatedAt: new Date() },
+    });
+}
+
 async function runSeed(): Promise<void> {
+  await ensureTikTokDomainsInSettings();
+
   const [
     [{ value: profileCount }],
     [{ value: settingsCount }],
@@ -163,6 +213,10 @@ async function runSeed(): Promise<void> {
         {
           settingKey: 'timezone',
           settingValue: 'Asia/Jakarta',
+        },
+        {
+          settingKey: 'tiktok_domains_migrated',
+          settingValue: 'true',
         },
       ])
       .onConflictDoNothing();

@@ -110,7 +110,7 @@ export function AdminSandboxPage() {
   const handleTestLink = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!testUrl.trim()) {
-      notifyError('Masukkan URL Shopee affiliate terlebih dahulu.');
+      notifyError('Masukkan URL affiliate (Shopee / TikTok) terlebih dahulu.');
       return;
     }
 
@@ -302,14 +302,14 @@ export function AdminSandboxPage() {
                 htmlFor="sandbox-url-input"
                 className="block text-xs font-medium text-[#3F232C] mb-1.5"
               >
-                Shopee Affiliate URL
+                Affiliate URL (Shopee / TikTok)
               </label>
               <textarea
                 id="sandbox-url-input"
                 rows={3}
                 value={testUrl}
                 onChange={(e) => setTestUrl(e.target.value)}
-                placeholder="https://shopee.co.id/product/... atau https://s.shopee.co.id/..."
+                placeholder="https://shopee.co.id/... atau https://vt.tiktok.com/..."
                 className="w-full p-3.5 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs font-mono-tabular text-[#3F232C] focus:outline-none focus:border-[#C25B7C]"
               />
             </div>
@@ -394,7 +394,7 @@ export function AdminSandboxPage() {
                 </div>
                 {queryEntries.length === 0 ? (
                   <p className="text-xs text-[#7D4E5D] bg-[#FFF6F8] rounded-xl p-3 border border-[#F0C6D2]/60">
-                    Tidak ada query parameter tambahan pada URL ini (umum pada shortlink s.shopee.co.id / shope.ee).
+                    Tidak ada query parameter tambahan pada URL ini (umum pada shortlink s.shopee.co.id / shope.ee / vt.tiktok.com).
                   </p>
                 ) : (
                   <div className="overflow-x-auto rounded-xl border border-[#F0C6D2]/70">

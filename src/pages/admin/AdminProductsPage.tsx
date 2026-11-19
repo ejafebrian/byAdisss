@@ -1030,14 +1030,14 @@ export function AdminProductsPage() {
 
               <div>
                 <label className="block text-xs font-medium text-[#3F232C] mb-1.5">
-                  Shopee Affiliate URL *
+                  Affiliate URL (Shopee / TikTok) *
                 </label>
                 <textarea
                   rows={3}
                   required
                   value={editingLinkUrl}
                   onChange={(e) => setEditingLinkUrl(e.target.value)}
-                  placeholder="https://shopee.co.id/... atau https://s.shopee.co.id/..."
+                  placeholder="https://shopee.co.id/... atau https://vt.tiktok.com/..."
                   className="w-full p-3 rounded-xl border border-[#F0C6D2] bg-[#FFF6F8] text-xs font-mono-tabular text-[#3F232C] focus:outline-none focus:border-[#C25B7C]"
                 />
               </div>
